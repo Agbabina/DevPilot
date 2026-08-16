@@ -12,9 +12,14 @@ import (
 	"strings"
 	"time"
 )
-
 const apiURL = "http://localhost:3000"
-
+type Resource struct {
+	ID      int      `json:"id"`
+	Title   string   `json:"title"`
+	Content string   `json:"content"`
+	Type    string   `json:"type"`
+	Tags    []string `json:"tags"`
+}
 type Project struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
@@ -82,6 +87,11 @@ func main() {
 
 	case "help", "--help", "-h":
 		usage()
+	case "resource":
+		handleResource(reader)
+
+	case "progress":
+		showProgress()
 
 	default:
 		fmt.Println("Unknown command:", os.Args[1])
@@ -107,7 +117,59 @@ func handleAI(reader *bufio.Reader) {
 		usage()
 	}
 }
+func handleResource(reader *bufio.Reader) {
+	if len(os.Args) < 3 {
+		usage()
+		return
+	}
 
+	switch os.Args[2] {
+	case "list":
+		var resources []Resource
+
+		if err := request("GET", "/resources", nil, &resources); err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		if len(resources) == 0 {
+			fmt.Println("No resources found.")
+			return
+		}
+
+		for _, resource := range resources {
+			fmt.Printf(
+				"#%d %-30s [%s]\n",
+				resource.ID,
+				resource.Title,
+				resource.Type,
+			)
+		}
+
+	case "create":
+		body := map[string]any{
+			"title":   ask(reader, "Title: "),
+			"content": ask(reader, "Content: "),
+			"type":    strings.ToUpper(ask(reader, "Type: ")),
+		}
+
+		var resource Resource
+
+		if err := request("POST", "/resources", body, &resource); err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		fmt.Println("Created resource:", resource.Title)
+
+	case "delete":
+		deleteResource(reader, "resource")
+
+	default:
+		fmt.Println("Unknown resource command:", os.Args[2])
+		usage()
+	}
+}
 func handleProject(reader *bufio.Reader) {
 	if len(os.Args) < 3 {
 		usage()
@@ -238,6 +300,9 @@ func request(method, path string, body any, out any) error {
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if token := os.Getenv("DEVPILOT_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
 	res, err := http.DefaultClient.Do(req)
@@ -754,6 +819,23 @@ func updateTaskStatus(reader *bufio.Reader, status string) {
 	)
 }
 
+func showProgress() {
+	var progress map[string]any
+
+	if err := request("GET", "/progression/me", nil, &progress); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	data, err := json.MarshalIndent(progress, "", "  ")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println(string(data))
+}
+
 func deleteResource(reader *bufio.Reader, kind string) {
 	resourceID := id(
 		reader,
@@ -764,6 +846,7 @@ func deleteResource(reader *bufio.Reader, kind string) {
 		"project":   "/projects/",
 		"milestone": "/milestones/",
 		"task":      "/tasks/",
+		"resource":  "/resources/",
 	}
 
 	path, exists := paths[kind]

@@ -1,0 +1,1 @@
+import { IsArray, IsOptional, IsString } from 'class-validator'; export class CreateResourceDto { @IsString() title:string; @IsString() content:string; @IsOptional() @IsString() type?:string; @IsOptional() @IsArray() @IsString({each:true}) tags?:string[]; }

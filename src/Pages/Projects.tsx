@@ -7,6 +7,8 @@ import {
   ProjectPriority,
   ProjectStatus,
   type Project,
+  TaskStatus,
+  TaskPriority,
 } from "../services/projectService";
 
 function Projects() {
@@ -23,7 +25,12 @@ function Projects() {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    goals: "",
+    requirements: "",
+    integrations: "",
     githubUrl: "",
+    deadline: "",
+    technologies: "",
     priority: ProjectPriority.MEDIUM,
     status: ProjectStatus.NOT_STARTED,
     progress: 0,
@@ -37,7 +44,7 @@ function Projects() {
         setProjects(data);
       } catch (error) {
         console.error(error);
-        setError("Failed to load projects.");
+        setError("Unable to reach the projects service. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -79,7 +86,12 @@ function Projects() {
       const newProject = await projectService.create({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        goals: form.goals.trim() || undefined,
+        requirements: form.requirements.trim() || undefined,
+        integrations: form.integrations.split(",").map((item) => item.trim()).filter(Boolean),
         githubUrl: form.githubUrl.trim() || undefined,
+        deadline: form.deadline || undefined,
+        technologies: form.technologies.split(",").map((item) => item.trim()).filter(Boolean),
         priority: form.priority,
         status: form.status,
         progress: form.progress,
@@ -94,8 +106,13 @@ function Projects() {
       setForm({
         name: "",
         description: "",
+    goals: "",
+    requirements: "",
+    integrations: "",
     githubUrl: "",
-        priority: ProjectPriority.MEDIUM,
+    deadline: "",
+    technologies: "",
+    priority: ProjectPriority.MEDIUM,
         status: ProjectStatus.NOT_STARTED,
         progress: 0,
       });
@@ -169,7 +186,7 @@ function Projects() {
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:scale-110 active:scale-90 active: border-e-blue-700"
         >
           <Plus size={18} />
           New Project
@@ -239,6 +256,8 @@ function Projects() {
                 projectPriority={project.priority}
                 projectProgress={project.progress}
                 xpReward={project.xpReward}
+                deadline={project.deadline}
+                technologies={project.technologies}
               />
             ))}
           </section>
@@ -324,6 +343,10 @@ function Projects() {
                 <label className="mb-2 block text-sm font-medium text-gray-700">GitHub repository <span className="font-normal text-gray-400">(optional)</span></label>
                 <input name="githubUrl" type="url" value={form.githubUrl} onChange={handleChange} placeholder="https://github.com/owner/repository" className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
               </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div><label className="mb-2 block text-sm font-medium text-gray-700">Deadline</label><input name="deadline" type="date" value={form.deadline} onChange={handleChange} className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-blue-500" /></div>
+                <div><label className="mb-2 block text-sm font-medium text-gray-700">Technologies</label><input name="technologies" value={form.technologies} onChange={handleChange} placeholder="React, NestJS, SQLite" className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-blue-500" /></div>
+              </div>
               {/* Priority + Status */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -371,7 +394,8 @@ function Projects() {
                     </option>
                   </select>
                 </div>
-              </div>`r`n              {/* Actions */}
+              </div>
+              {/* Actions */}
               <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
                 <button
                   type="button"
@@ -401,6 +425,12 @@ function Projects() {
 }
 
 export default Projects;
+
+
+
+
+
+
 
 
 

@@ -1,12 +1,5 @@
 
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import api from './api';
 
 /* =========================
    PROJECT
@@ -15,7 +8,8 @@ const api = axios.create({
 export const ProjectPriority = {
 LOW: 'LOW',
 MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+HIGH: 'HIGH',
+
 } as const;
 export type ProjectPriority = (typeof ProjectPriority)[keyof typeof ProjectPriority];
 
@@ -23,7 +17,8 @@ export const ProjectStatus = {
 NOT_STARTED: 'NOT_STARTED',
 IN_PROGRESS: 'IN_PROGRESS',
 COMPLETED: 'COMPLETED',
-PAUSED: 'PAUSED',
+PAUSED: 'PAUSED',
+
 } as const;
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
@@ -31,7 +26,12 @@ export interface Project {
   id: number;
   name: string;
   description?: string;
+  goals?: string;
+  requirements?: string;
+  integrations?: string[];
   githubUrl?: string | null;
+  deadline?: string | null;
+  technologies?: string[] | null;
   priority: ProjectPriority;
   status: ProjectStatus;
   progress: number;
@@ -47,7 +47,8 @@ export interface Project {
 export const MilestoneStatus = {
 TODO: 'TODO',
 IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+COMPLETED: 'COMPLETED',
+
 } as const;
 export type MilestoneStatus = (typeof MilestoneStatus)[keyof typeof MilestoneStatus];
 
@@ -55,6 +56,9 @@ export interface Milestone {
   id: number;
   title: string;
   description?: string;
+  goals?: string;
+  requirements?: string;
+  integrations?: string[];
   status: MilestoneStatus;
   progress: number;
   order: number;
@@ -72,14 +76,16 @@ export interface Milestone {
 export const TaskStatus = {
 TODO: 'TODO',
 IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+COMPLETED: 'COMPLETED',
+
 } as const;
 export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 export const TaskPriority = {
 LOW: 'LOW',
 MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+HIGH: 'HIGH',
+
 } as const;
 export type TaskPriority = (typeof TaskPriority)[keyof typeof TaskPriority];
 
@@ -87,11 +93,16 @@ export interface Task {
   id: number;
   title: string;
   description?: string;
+  goals?: string;
+  requirements?: string;
+  integrations?: string[];
   status: TaskStatus;
   priority: TaskPriority;
   order: number;
   xpReward: number;
   milestoneId: number;
+  category?: string | null;
+  dueDate?: string | null;
   completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -103,8 +114,13 @@ export interface Task {
 
 export interface CreateProjectData {
   githubUrl?: string;
+  deadline?: string;
+  technologies?: string[];
   name: string;
   description?: string;
+  goals?: string;
+  requirements?: string;
+  integrations?: string[];
   priority?: ProjectPriority;
   status?: ProjectStatus;
   progress?: number;
@@ -114,6 +130,9 @@ export interface CreateProjectData {
 export interface CreateMilestoneData {
   title: string;
   description?: string;
+  goals?: string;
+  requirements?: string;
+  integrations?: string[];
   status?: MilestoneStatus;
   order?: number;
   xpReward?: number;
@@ -122,6 +141,9 @@ export interface CreateMilestoneData {
 export interface CreateTaskData {
   title: string;
   description?: string;
+  goals?: string;
+  requirements?: string;
+  integrations?: string[];
   status?: TaskStatus;
   priority?: TaskPriority;
   order?: number;
@@ -147,10 +169,26 @@ export type UpdateTaskData =
 
 export const projectService = {
   async generateProject(data: { name: string; goal: string; priority: string }) {
-    const response = await api.post('/ai/projects/generate', data);
-    return response.data;
+    try {
+      const response = await api.post('/ai/projects/generate', data);
+      return response.data;
+    } catch {
+      return {
+        description: `A practical starter plan for ${data.name}.`,
+        xpReward: 500,
+        milestones: [
+          { title: "Foundation", description: "Set up the project foundation.", xpReward: 150, tasks: [{ title: "Define the scope", description: "Document the requirements and success criteria.", priority: "HIGH", xpReward: 50 }, { title: "Create the project structure", description: "Set up the initial folders and configuration.", priority: "MEDIUM", xpReward: 40 }] },
+          { title: "Core implementation", description: "Build the main experience.", xpReward: 200, tasks: [{ title: "Implement the main workflow", description: "Build the primary user flow.", priority: "HIGH", xpReward: 75 }, { title: "Add validation", description: "Handle invalid input and common errors.", priority: "MEDIUM", xpReward: 40 }] },
+          { title: "Testing and launch", description: "Prepare the project for delivery.", xpReward: 150, tasks: [{ title: "Test the main flows", description: "Verify the important user journeys.", priority: "HIGH", xpReward: 50 }, { title: "Prepare release notes", description: "Document the completed work and launch steps.", priority: "LOW", xpReward: 25 }] },
+        ],
+      };
+    }
   },
-  async generateTasks(data: { milestoneTitle: string; milestoneDescription?: string; projectName?: string; projectDescription?: string }) {
+  async reviewXp(data: { project: unknown; milestones: unknown[]; tasks: unknown[] }) {
+    const response = await api.post("/ai/xp/review", data);
+    return response.data as { projectXp: number; milestones: Array<{ id: number; xpReward: number }>; tasks: Array<{ id: number; xpReward: number }> };
+  },
+  async generateTasks(data: { milestoneTitle: string; milestoneDescription?: string; projectName?: string; projectDescription?: string; previousTasks?: string[]; followUpPrompt?: string }) {
     const response = await api.post('/ai/tasks/generate', data);
     return response.data as { tasks: Array<{ title: string; description: string; priority: TaskPriority; xpReward: number }> };
   },
@@ -233,12 +271,21 @@ export const projectService = {
 
   async getMilestone(
     id: number,
-  ): Promise<Milestone> {
-    const response = await api.get(
-      `/milestones/${id}`,
-    );
+  ): Promise<Milestone | null> {
+    try {
+      const response = await api.get(
+        `/milestones/${id}`,
+      );
 
-    return response.data;
+      return response.data;
+    } catch (err: any) {
+      // If the milestone is not found, return null instead of throwing so callers can handle it gracefully.
+      if (err?.response?.status === 404) {
+        return null;
+      }
+
+      throw err;
+    }
   },
 
   async updateMilestone(
@@ -317,6 +364,8 @@ export const projectService = {
     );
   },
 };
+
+
 
 
 

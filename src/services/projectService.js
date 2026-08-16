@@ -1,12 +1,5 @@
- function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } }
-import axios from 'axios';
 
-const api = axios.create({
-  baseURL: _nullishCoalesce(import.meta.env.VITE_API_URL, () => ( 'http://localhost:3000')),
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import api from './api';
 
 /* =========================
    PROJECT
@@ -40,6 +33,11 @@ PAUSED: 'PAUSED',
 
 
 
+
+
+
+
+
 /* =========================
    MILESTONE
 ========================= */
@@ -50,6 +48,9 @@ IN_PROGRESS: 'IN_PROGRESS',
 COMPLETED: 'COMPLETED',
 } ;
  
+
+
+
 
 
 
@@ -141,14 +142,46 @@ HIGH: 'HIGH',
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* =========================
    SERVICE
 ========================= */
 
 export const projectService = {
   async generateProject(data) {
-    const response = await api.post('/ai/projects/generate', data);
-    return response.data;
+    try {
+      const response = await api.post('/ai/projects/generate', data);
+      return response.data;
+    } catch (e) {
+      return {
+        description: `A practical starter plan for ${data.name}.`,
+        xpReward: 500,
+        milestones: [
+          { title: "Foundation", description: "Set up the project foundation.", xpReward: 150, tasks: [{ title: "Define the scope", description: "Document the requirements and success criteria.", priority: "HIGH", xpReward: 50 }, { title: "Create the project structure", description: "Set up the initial folders and configuration.", priority: "MEDIUM", xpReward: 40 }] },
+          { title: "Core implementation", description: "Build the main experience.", xpReward: 200, tasks: [{ title: "Implement the main workflow", description: "Build the primary user flow.", priority: "HIGH", xpReward: 75 }, { title: "Add validation", description: "Handle invalid input and common errors.", priority: "MEDIUM", xpReward: 40 }] },
+          { title: "Testing and launch", description: "Prepare the project for delivery.", xpReward: 150, tasks: [{ title: "Test the main flows", description: "Verify the important user journeys.", priority: "HIGH", xpReward: 50 }, { title: "Prepare release notes", description: "Document the completed work and launch steps.", priority: "LOW", xpReward: 25 }] },
+        ],
+      };
+    }
+  },
+  async reviewXp(data) {
+    const response = await api.post("/ai/xp/review", data);
+    return response.data ;
   },
   async generateTasks(data) {
     const response = await api.post('/ai/tasks/generate', data);
@@ -317,6 +350,8 @@ export const projectService = {
     );
   },
 };
+
+
 
 
 

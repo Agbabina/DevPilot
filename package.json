@@ -14,6 +14,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/mapped-types": "^2.1.1",
     "@nestjs/passport": "^11.0.5",
+    "@octokit/webhooks-methods": "^6.0.0",
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.19.0",
     "class-transformer": "^0.5.1",
