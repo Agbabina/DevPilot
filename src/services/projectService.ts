@@ -184,13 +184,9 @@ export const projectService = {
       };
     }
   },
-  async reviewXp(data: { project: unknown; milestones: unknown[]; tasks: unknown[] }) {
-    const response = await api.post("/ai/xp/review", data);
-    return response.data as { projectXp: number; milestones: Array<{ id: number; xpReward: number }>; tasks: Array<{ id: number; xpReward: number }> };
-  },
   async generateTasks(data: { milestoneTitle: string; milestoneDescription?: string; projectName?: string; projectDescription?: string; previousTasks?: string[]; followUpPrompt?: string }) {
     const response = await api.post('/ai/tasks/generate', data);
-    return response.data as { tasks: Array<{ title: string; description: string; priority: TaskPriority; xpReward: number }> };
+    return response.data as { tasks: Array<{ title: string; description: string; priority: TaskPriority }> };
   },
   /* =====================
      PROJECTS
@@ -364,6 +360,7 @@ export const projectService = {
     );
   },
 };
+
 
 
 

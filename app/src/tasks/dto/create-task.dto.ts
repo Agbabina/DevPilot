@@ -34,10 +34,7 @@ export class CreateTaskDto {
   @Min(0)
   order?: number;
 
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  xpReward?: number;
 }
+
 
 

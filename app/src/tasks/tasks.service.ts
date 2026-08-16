@@ -18,7 +18,7 @@ import {
 } from './tasks.entity';
 
 @Injectable()
-export class TasksService {
+export class TasksService {`r`n  private static readonly TASK_XP_VALUES = [10, 25, 50, 75, 100];
   constructor(
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
@@ -44,7 +44,7 @@ export class TasksService {
     return task;
   }
 
-  async createForMilestone(
+  private randomTaskXp(): number {`r`n    const values = TasksService.TASK_XP_VALUES;`r`n    return values[Math.floor(Math.random() * values.length)];`r`n  }`r`n`r`n  async createForMilestone(
     milestoneId: number,
     createTaskDto: CreateTaskDto,
   ) {
@@ -165,4 +165,5 @@ export class TasksService {
     };
   }
 }
+
 
