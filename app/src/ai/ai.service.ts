@@ -74,47 +74,6 @@ export class AiService {
     }
 
     /**
-     * Reviews project, milestones and tasks and assigns XP.
-     */
-    async reviewXp(data: {
-        project: any;
-        milestones: any[];
-        tasks: any[];
-    }) {
-        return this.callAI(
-            `
-You are DevPilot's XP evaluation system.
-
-Return ONLY valid JSON.
-
-{
-  "projectXp": number,
-  "milestones": [
-    {
-      "id": number,
-      "xpReward": number
-    }
-  ],
-  "tasks": [
-    {
-      "id": number,
-      "xpReward": number
-    }
-  ]
-}
-
-Rules:
-- Every item must receive non-zero XP.
-- XP must reflect complexity.
-- Larger projects should generally receive more XP.
-- Tasks should receive less XP than their parent milestone.
-- Do not add extra fields.
-      `.trim(),
-            data,
-        );
-    }
-
-    /**
      * Generates a complete project plan.
      */
     async generateProject(data: {
@@ -160,6 +119,7 @@ Rules:
 - HARD = 200-400 XP.
 - EPIC = 400-750 XP.
 - Make tasks concrete and actionable.
+-Each Task must be unique
       `.trim(),
             data,
         );
@@ -290,3 +250,4 @@ Rules:
         }
     }
 }
+

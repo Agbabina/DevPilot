@@ -40,11 +40,6 @@ function ProjectDetails() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
-  const [xpError, setXpError] = useState<string | null>(null);
-  const TASK_XP_VALUES = [10, 25, 50, 75, 100];
-
-  const randomTaskXp = () =>
-  TASK_XP_VALUES[Math.floor(Math.random() * TASK_XP_VALUES.length)];
   useEffect(() => {
     async function loadProject() {
       if (!projectId) {
@@ -302,13 +297,9 @@ function ProjectDetails() {
 
     try {
       setSaving(true);
-      const xpReview = await refreshXpRewards();
-      const milestoneXp = new Map((xpReview?.milestones ?? []).map((item) => [item.id, Math.max(1, Number(item.xpReward))]));
-      const taskXp = new Map((xpReview?.tasks ?? []).map((item) => [item.id, Math.max(1, Number(item.xpReward))]));
       const projectXp = Math.max(
           1,
           Number(
-              xpReview?.projectXp ??
               milestones.reduce((sum, milestone) => sum + Math.max(1, milestone.xpReward), 0) ??
               project?.xpReward ??
               1,
@@ -332,7 +323,7 @@ function ProjectDetails() {
                 description: milestone.description,
                 status: milestone.status,
                 order: milestone.order,
-                xpReward: milestoneXp.get(milestone.id) ?? Math.max(1, milestone.xpReward),
+                xpReward: Math.max(1, milestone.xpReward),
               });
             }
 
@@ -341,7 +332,7 @@ function ProjectDetails() {
               description: milestone.description,
               status: milestone.status,
               order: milestone.order,
-              xpReward: milestoneXp.get(milestone.id) ?? Math.max(1, milestone.xpReward),
+              xpReward: Math.max(1, milestone.xpReward),
             });
 
             // Tasks are keyed by the same temp milestone.id used when they were
@@ -354,7 +345,7 @@ function ProjectDetails() {
                       title: task.title,
                       description: task.description,
                       priority: task.priority,
-                      xpReward: taskXp.get(task.id) ?? Math.max(1, task.xpReward),
+                      xpReward: Math.max(1, task.xpReward),
                       order: taskIndex + 1,
                     }),
                 ),
@@ -449,87 +440,3 @@ function ProjectDetails() {
             </div>
           </div>
 
-          {xpError && (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                {xpError} — using local XP estimates instead.
-              </div>
-          )}
-
-          <div className="mt-6">
-            <div className="h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-800">
-              <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">
-              {completedMilestones} of {milestones.length} milestones completed
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-6 rounded-2xl bg-white dark:bg-slate-900 p-6">
-          <div className="mb-4 rounded-xl border border-cyan-100 bg-cyan-50/40 p-4">
-            <div className="mb-2 flex items-center gap-2"><Sparkles size={18} className="text-cyan-600" /><h2 className="font-bold">AI context</h2></div>
-            <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">Describe your product, users, features, and constraints. AI will generate the description, milestones, tasks, and XP rewards.</p>
-            <textarea value={aiContext} onChange={(e) => setAiContext(e.target.value)} placeholder="Example: Build a mobile-first marketplace for small farms..." className="min-h-24 w-full resize-none rounded-lg border border-cyan-100 bg-white dark:bg-slate-900 p-3 text-sm outline-none focus:ring-2 focus:ring-cyan-400" />
-          </div>
-          <h2 className="mb-2 text-xl font-bold">Project goals</h2>
-          <textarea value={goals} onChange={(e) => setGoals(e.target.value)} placeholder="What does success look like?" className="mb-4 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800" />
-          <h2 className="mb-2 text-xl font-bold">Requirements</h2>
-          <textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} placeholder="Functional, technical, and user requirements" className="mb-4 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800" />
-          <div className="mb-4 flex flex-wrap gap-2">{["Figma", "Excalidraw"].map((tag) => <button type="button" key={tag} onClick={() => setIntegrations((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])} className={`rounded-full border px-3 py-1 text-xs ${integrations.includes(tag) ? "border-cyan-500 bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300" : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"}`}>{tag}</button>)}</div>
-          <h2 className="mb-2 text-xl font-bold">Description</h2>
-          <p className="mb-4 text-sm text-slate-400 dark:text-slate-500">
-            Describe what this project is about and what you want to accomplish.
-          </p>
-
-          <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Write everything about your project..."
-              className="min-h-48 w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 p-4 outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="rounded-2xl bg-white dark:bg-slate-900 p-6 dark:bg-slate-900">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold">Milestones</h2>
-              <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
-                Break your project into smaller goals.
-              </p>
-            </div>
-
-            <button
-                onClick={addMilestone}
-                className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-            >
-              <Plus size={18} />
-              Add Milestone
-            </button>
-          </div>
-
-          {milestones.length === 0 && (
-              <div className="rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-10 text-center">
-                <p className="text-slate-400 dark:text-slate-500">
-                  You haven't added any milestones yet.
-                </p>
-
-                <button
-                    onClick={addMilestone}
-                    className="mt-2 text-blue-600 hover:underline"
-                >
-                  Create your first milestone
-                </button>
-              </div>
-          )}
-
-          <MilestoneList milestones={milestones} milestoneTasks={milestoneTasks} activeTaskCreator={activeTaskCreator} taskDrafts={taskDrafts} creatingTask={creatingTask} justCreatedTask={justCreatedTask} setActiveTaskCreator={setActiveTaskCreator} setTaskDrafts={setTaskDrafts} toggleMilestone={toggleMilestone} updateMilestone={updateMilestone} deleteMilestone={deleteMilestone} addTask={addTask} toggleTask={toggleTask} />
-        </div>
-      </div>
-  );
-}
-
-export default ProjectDetails;

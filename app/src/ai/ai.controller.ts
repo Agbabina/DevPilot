@@ -30,17 +30,6 @@ export class AiController {
     return await this.aiService.generateTasks(body);
   }
 
-  @Post('xp/review')
-  async reviewXp(
-      @Body()
-      body: {
-        project: any;
-        milestones: any[];
-        tasks: any[];
-      },
-  ) {
-    return await this.aiService.reviewXp(body);
-  }
 
   @Post('code/generate')
   async generateCode(
@@ -65,3 +54,4 @@ export class AiController {
     return await this.aiService.assist(body);
   }
 }
+
