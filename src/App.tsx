@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthPage from "./Pages/AuthPage";
 import Dashboard from "./Pages/Dashboard";
@@ -13,6 +14,10 @@ import Resources from "./Pages/Resources";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 function App() {
+  useEffect(() => {
+    const theme = localStorage.getItem("theme") || "light";
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, []);
   return (
     <BrowserRouter>
       <Routes>
@@ -42,3 +47,5 @@ function App() {
 }
 
 export default App;
+
+

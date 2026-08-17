@@ -17,3 +17,17 @@ button { transition: transform .2s ease, box-shadow .2s ease, background-color .
 button:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(8,145,178,.14); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
+
+html.dark { color-scheme: dark; }
+html.dark body { background: #020617; color: #e2e8f0; }
+html.dark input, html.dark textarea, html.dark select { color: #e2e8f0; }
+html.dark .dev-grid { background-image: linear-gradient(rgba(34,211,238,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,.07) 1px, transparent 1px); }
+
+
+html.dark .bg-white { background-color: #0f172a !important; }
+html.dark .bg-slate-50, html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: #020617 !important; }
+html.dark .border-slate-200, html.dark .border-gray-200 { border-color: #1e293b !important; }
+html.dark .text-slate-900, html.dark .text-gray-900 { color: #f1f5f9 !important; }
+html.dark .text-slate-700, html.dark .text-gray-700 { color: #cbd5e1 !important; }
+html.dark .text-slate-600, html.dark .text-gray-600 { color: #94a3b8 !important; }
+

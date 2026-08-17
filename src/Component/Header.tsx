@@ -21,21 +21,21 @@ export default function Header() {
 
   if (!user) {
     return (
-      <header className="flex items-center justify-between border-b border-slate-200/80 bg-white/90 px-5 py-4 backdrop-blur md:px-8">
-        <p className="text-gray-500">Loading...</p>
+      <header className="flex items-center justify-between border-b border-slate-200/80 bg-white/90 dark:border-slate-800 dark:bg-slate-950/90 px-5 py-4 backdrop-blur md:px-8">
+        <p className="text-slate-500 dark:text-slate-400">Loading...</p>
       </header>
     );
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-200/80 bg-white/90 px-5 py-4 backdrop-blur md:px-8">
+    <header className="flex items-center justify-between border-b border-slate-200/80 bg-white/90 dark:border-slate-800 dark:bg-slate-950/90 px-5 py-4 backdrop-blur md:px-8">
       <div className="flex items-center gap-4">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-lg font-bold text-white shadow-lg shadow-blue-200">
           {user.username.charAt(0).toUpperCase()}
         </div>
 
         <div>
-          <h2 className="text-sm font-bold tracking-tight text-slate-900">
+          <h2 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
             {user.username}
           </h2>
 
@@ -53,7 +53,7 @@ export default function Header() {
           />
 
           <div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {user.currentStreak} Day{user.currentStreak !== 1 && "s"} Streak
             </p>
 
@@ -66,7 +66,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Coins size={20} className="text-cyan-500" />
           <div>
-            <p className="text-sm font-semibold text-gray-900">{user.coins} Coins</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.coins} Coins</p>
             <p className="text-xs text-gray-400">Spendable rewards</p>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function Header() {
           />
 
           <div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {user.totalXp} XP
             </p>
 
@@ -91,5 +91,6 @@ export default function Header() {
     </header>
   );
 }
+
 
 
