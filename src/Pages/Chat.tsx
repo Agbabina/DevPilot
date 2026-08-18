@@ -1,12 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SubmitEvent } from "react";
 import { Send, Sparkles, Code2, Copy, Check } from "lucide-react";
 import api from "../services/api";
+import ReactMarkdown from "react-markdown";
+import { codeToHtml } from "shiki";
 
 type Message = {
   role: "user" | "assistant";
   text: string;
 };
+
+function MarkdownMessage({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        code({ className, children, ...props }) {
+          const language = /language-(\w+)/.exec(className ?? "")?.[1];
+          const isBlock = Boolean(language) || String(children).includes("\n");
+
+          if (!isBlock) return <code {...props}>{children}</code>;
+
+          return <ShikiCode language={language || "text"} code={String(children).replace(/\n$/, "")} />;
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
+function ShikiCode({ language, code }: { language: string; code: string }) {
+  const [html, setHtml] = useState("");
+
+  useEffect(() => {
+    const aliases: Record<string, string> = {
+      js: "javascript",
+      jsx: "jsx",
+      ts: "typescript",
+      tsx: "tsx",
+      html: "html",
+      htm: "html",
+      css: "css",
+      py: "python",
+      python: "python",
+      sh: "bash",
+    };
+    void codeToHtml(code, { lang: aliases[language] || language, theme: "github-dark" }).then(setHtml);
+  }, [code, language]);
+
+  return html ? (
+    <div className="my-4 overflow-auto rounded-xl text-sm" dangerouslySetInnerHTML={{ __html: html }} />
+  ) : (
+    <pre className="my-4 overflow-auto rounded-xl bg-slate-950 p-4 text-sm text-slate-100"><code>{code}</code></pre>
+  );
+}
 
 export default function Chat() {
   const [message, setMessage] = useState("");
@@ -34,19 +81,37 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      const response = await api.post<{ result: string }>(
-        "/ai/assist",
-        {
-          action,
-          context: "DevPilot project management assistant",
-        },
-      );
+      const response = mode === "code"
+        ? await api.post<{ code: string; explanation?: string; filename?: string; language?: string }>(
+            "/ai/code/generate",
+            { prompt: action, context: "DevPilot project" },
+          )
+        : await api.post<{ answer?: string; result?: string }>("/ai/assist", {
+            action,
+            context: "DevPilot project management assistant",
+          });
 
+      if (mode === "code") {
+        const raw = response.data as any;
+        const generated = (raw?.code ? raw : raw?.result?.code ? raw.result : raw?.data?.code ? raw.data : raw) as {
+          code?: string; explanation?: string; filename?: string; language?: string;
+        };
+        setCodeResult(generated);
+        setMessages((current) => [...current, {
+          role: "assistant",
+          text: generated.code
+            ? `${generated.explanation || `Generated ${generated.filename || "code"}.`}\n\n\`\`\`${generated.language || "text"}\n${generated.code}\n\`\`\``
+            : "The AI returned no code. Try describing the file or component you want more specifically.",
+        }]);
+        return;
+      }
+
+      const assistantResponse = response.data as { answer?: string; result?: string };
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
-          text: response.data.result,
+          text: assistantResponse.answer ?? assistantResponse.result ?? "",
         },
       ]);
     } catch (error: any) {
@@ -89,7 +154,7 @@ export default function Chat() {
                     : "bg-slate-100 dark:bg-slate-800"
                 }`}
               >
-                {item.text}
+                {item.role === "assistant" ? <MarkdownMessage content={item.text} /> : item.text}
               </div>
             ))}
 

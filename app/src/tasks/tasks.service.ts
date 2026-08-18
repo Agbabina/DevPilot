@@ -70,8 +70,9 @@ export class TasksService {
         ...createTaskDto,
         milestone,
         milestoneId,
+        xpReward: this.randomTaskXp(),
       });
-
+      
     this.applyCompletionFields(task);
 
     const savedTask =
@@ -81,7 +82,6 @@ export class TasksService {
       .recalculateMilestoneProgress(
         milestoneId,
       );
-
     return savedTask;
   }
 

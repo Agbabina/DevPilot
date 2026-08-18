@@ -1,4 +1,4 @@
-
+ function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }
 import api from './api';
 
 /* =========================
@@ -8,7 +8,8 @@ import api from './api';
 export const ProjectPriority = {
 LOW: 'LOW',
 MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+HIGH: 'HIGH',
+
 } ;
  
 
@@ -16,7 +17,8 @@ export const ProjectStatus = {
 NOT_STARTED: 'NOT_STARTED',
 IN_PROGRESS: 'IN_PROGRESS',
 COMPLETED: 'COMPLETED',
-PAUSED: 'PAUSED',
+PAUSED: 'PAUSED',
+
 } ;
  
 
@@ -45,7 +47,8 @@ PAUSED: 'PAUSED',
 export const MilestoneStatus = {
 TODO: 'TODO',
 IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+COMPLETED: 'COMPLETED',
+
 } ;
  
 
@@ -73,14 +76,16 @@ COMPLETED: 'COMPLETED',
 export const TaskStatus = {
 TODO: 'TODO',
 IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+COMPLETED: 'COMPLETED',
+
 } ;
  
 
 export const TaskPriority = {
 LOW: 'LOW',
 MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+HIGH: 'HIGH',
+
 } ;
  
 
@@ -179,10 +184,6 @@ export const projectService = {
       };
     }
   },
-  async reviewXp(data) {
-    const response = await api.post("/ai/xp/review", data);
-    return response.data ;
-  },
   async generateTasks(data) {
     const response = await api.post('/ai/tasks/generate', data);
     return response.data ;
@@ -267,11 +268,20 @@ export const projectService = {
   async getMilestone(
     id,
   ) {
-    const response = await api.get(
-      `/milestones/${id}`,
-    );
+    try {
+      const response = await api.get(
+        `/milestones/${id}`,
+      );
 
-    return response.data;
+      return response.data;
+    } catch (err) {
+      // If the milestone is not found, return null instead of throwing so callers can handle it gracefully.
+      if (_optionalChain([err, 'optionalAccess', _ => _.response, 'optionalAccess', _2 => _2.status]) === 404) {
+        return null;
+      }
+
+      throw err;
+    }
   },
 
   async updateMilestone(
@@ -350,6 +360,7 @@ export const projectService = {
     );
   },
 };
+
 
 
 
