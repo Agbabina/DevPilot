@@ -7,8 +7,6 @@ import {
   ProjectPriority,
   ProjectStatus,
   type Project,
-  TaskStatus,
-  TaskPriority,
 } from "../services/projectService";
 
 function Projects() {
