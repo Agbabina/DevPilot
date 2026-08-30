@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "../Component/Header";
 import Sidebar from "../Component/Sidebar";
 import { projectService, type Project, type Milestone, type Task } from "../services/projectService";
+import { TaskStatus } from './../services/projectService';
 
 export default function ProjectDetails() {
   const navigate = useNavigate();
@@ -85,13 +86,7 @@ export default function ProjectDetails() {
   async function toggleTask(milestoneId: number, task: Task) {
     const updatedStatus = !task.completedAt;
     
-    // Optimistic UI Update
-    setTasks((prev) => ({
-      ...prev,
-      [milestoneId]: prev[milestoneId].map((t) =>
-        t.id === task.id ? { ...t, completedAt: updatedStatus ? new Date() : null } : t
-      ),
-    }));
+    // Optimistic UI Updat
 
     try {
       if (projectService.updateTask) {
@@ -142,12 +137,12 @@ export default function ProjectDetails() {
       const created = await projectService.createTask?.(milestoneId, {
         title: newTaskTitle,
         xpReward: Number(newTaskReward),
-        completed: false,
+        status: TaskStatus.TODO,
       }) || {
         id: Date.now(),
         title: newTaskTitle,
         xpReward: Number(newTaskReward),
-        completed: false,
+        status: TaskStatus.TODO,
       };
 
       setTasks((prev) => ({
@@ -163,8 +158,8 @@ export default function ProjectDetails() {
 
   // Computations
   const allTasks = Object.values(tasks).flat();
-  const completedTasks = allTasks.filter((t) => t.completed);
-  const totalXP = allTasks.reduce((sum, t) => sum + (t.completed ? t.xpReward || 0 : 0), 0);
+  const completedTasks = allTasks.filter((t) => t.completedAt);
+  const totalXP = allTasks.reduce((sum, t) => sum + (t.completedAt ? t.xpReward || 0 : 0), 0);
   const progressPercent = allTasks.length > 0 ? Math.round((completedTasks.length / allTasks.length) * 100) : 0;
 
   if (loading) {
@@ -347,7 +342,7 @@ export default function ProjectDetails() {
               {/* Milestone Cards List */}
               {milestones.map((milestone) => {
                 const milestoneTasks = tasks[milestone.id] || [];
-                const milestoneCompleted = milestoneTasks.length > 0 && milestoneTasks.every((t) => t.completed);
+                const milestoneCompleted = milestoneTasks.length > 0 && milestoneTasks.every((t) => t.completedAt);
 
                 return (
                   <section key={milestone.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition dark:border-slate-800 dark:bg-slate-900">
@@ -410,20 +405,20 @@ export default function ProjectDetails() {
                           key={task.id} 
                           onClick={() => toggleTask(milestone.id, task)} 
                           className={`flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 transition ${
-                            task.completed 
+                            task.completedAt
                               ? "border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/10" 
                               : "border-slate-100 bg-slate-50 hover:border-slate-200 dark:border-slate-800/60 dark:bg-slate-800/50"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <button className="text-slate-400 transition hover:text-cyan-500">
-                              {task.completed ? (
+                              {task.completedAt ? (
                                 <CheckCircle2 className="text-emerald-500" size={18} />
                               ) : (
                                 <Circle size={18} />
                               )}
                             </button>
-                            <span className={`text-sm font-semibold ${task.completed ? "line-through text-slate-400 dark:text-slate-500" : ""}`}>
+                            <span className={`text-sm font-semibold ${task.completedAt ? "line-through text-slate-400 dark:text-slate-500" : ""}`}>
                               {task.title}
                             </span>
                           </div>
