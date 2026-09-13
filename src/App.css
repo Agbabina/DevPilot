@@ -62,7 +62,7 @@
   flex-wrap: wrap;
   gap: 12px;
   width: min(450px, 40vw);
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   color: rgba(165, 243, 252, 0.85);
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -76,6 +76,11 @@
   background: rgba(2,6,23,0.32);
   backdrop-filter: blur(10px);
 }
+
+.code-line:nth-child(1) { color: #a5f3fc; }
+.code-line:nth-child(2) { color: #c4b5fd; }
+.code-line:nth-child(3) { color: #bbf7d0; }
+.code-line:nth-child(4) { color: #fde68a; }
 
 .code-line-2 { transform: translateX(42px); }
 .code-line-3 { transform: translateX(82px); }

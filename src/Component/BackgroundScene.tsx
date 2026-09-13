@@ -1,11 +1,4 @@
-const codeLines = [
-  "npm run build",
-  "ship(project)",
-  "track(progress)",
-  "xp += 50",
-  "generateRoadmap()",
-  "deploy --ready",
-];
+const progressLabels = ["PLAN", "BUILD", "SHIP", "GROW"];
 
 export default function BackgroundScene() {
   return (
@@ -15,8 +8,8 @@ export default function BackgroundScene() {
       <div className="background-glass background-glass-two" />
 
       <div className="code-vortex">
-        {codeLines.map((line, index) => (
-          <span key={line} className={`code-line code-line-${index + 1}`}>{line}</span>
+        {progressLabels.map((label, index) => (
+          <span key={label} className={`code-line code-line-${index + 1}`}>{label}</span>
         ))}
       </div>
 
