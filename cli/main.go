@@ -12,7 +12,17 @@ import (
 	"strings"
 	"time"
 )
+
 const apiURL = "http://localhost:3000"
+const configFile = ".devpilot"
+
+type Config struct {
+	APIURL string
+	Token  string
+}
+
+var config Config
+
 type Resource struct {
 	ID      int      `json:"id"`
 	Title   string   `json:"title"`
@@ -55,7 +65,18 @@ type AIPlan struct {
 	Milestones  []Milestone `json:"milestones"`
 }
 
+type AuthResponse struct {
+	AccessToken string `json:"accessToken"`
+	User        struct {
+		ID       int    `json:"id"`
+		Username string `json:"username"`
+		Email    string `json:"email"`
+	} `json:"user"`
+}
+
 func main() {
+	loadConfig()
+
 	reader := bufio.NewReader(os.Stdin)
 
 	if len(os.Args) < 2 {
@@ -66,6 +87,15 @@ func main() {
 	switch os.Args[1] {
 	case "init":
 		initProject()
+
+	case "login":
+		login(reader)
+
+	case "logout":
+		logout()
+
+	case "whoami":
+		whoami()
 
 	case "status":
 		status()
@@ -97,6 +127,134 @@ func main() {
 		fmt.Println("Unknown command:", os.Args[1])
 		usage()
 	}
+}
+
+/* =========================
+   CONFIG (.devpilot file)
+========================= */
+
+// loadConfig reads key=value pairs from .devpilot in the current directory.
+// Falls back to the hardcoded apiURL and the DEVPILOT_TOKEN env var if the
+// file doesn't exist or a value is missing, so existing setups still work.
+func loadConfig() {
+	config = Config{
+		APIURL: apiURL,
+		Token:  os.Getenv("DEVPILOT_TOKEN"),
+	}
+
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		return
+	}
+
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || !strings.Contains(line, "=") {
+			continue
+		}
+
+		parts := strings.SplitN(line, "=", 2)
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		switch key {
+		case "api_url":
+			if value != "" {
+				config.APIURL = value
+			}
+		case "token":
+			if value != "" {
+				config.Token = value
+			}
+		}
+	}
+}
+
+func saveConfig() error {
+	contents := fmt.Sprintf("api_url=%s\ntoken=%s\n", config.APIURL, config.Token)
+	return os.WriteFile(configFile, []byte(contents), 0600)
+}
+
+/* =========================
+   AUTH
+========================= */
+
+func login(reader *bufio.Reader) {
+	email := ask(reader, "Email: ")
+	password := askPassword("Password: ")
+
+	body := map[string]string{
+		"email":    email,
+		"password": password,
+	}
+
+	var auth AuthResponse
+
+	if err := request("POST", "/auth/login", body, &auth); err != nil {
+		fmt.Println("Login failed:", err)
+		return
+	}
+
+	if auth.AccessToken == "" {
+		fmt.Println("Login failed: no access token returned.")
+		return
+	}
+
+	config.Token = auth.AccessToken
+
+	if err := saveConfig(); err != nil {
+		fmt.Println("Logged in, but failed to save token:", err)
+		return
+	}
+
+	fmt.Printf("Logged in as %s. Token saved to %s.\n", auth.User.Username, configFile)
+}
+
+func logout() {
+	config.Token = ""
+
+	if err := saveConfig(); err != nil {
+		fmt.Println("Error clearing token:", err)
+		return
+	}
+
+	fmt.Println("Logged out.")
+}
+
+func whoami() {
+	if config.Token == "" {
+		fmt.Println("Not logged in. Run `devpilot login` first.")
+		return
+	}
+
+	var me map[string]any
+
+	if err := request("GET", "/auth/me", nil, &me); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	data, err := json.MarshalIndent(me, "", "  ")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println(string(data))
+}
+
+// askPassword prompts for a password. Stdlib-only, so input is echoed to
+// the terminal as it's typed. If you want masked input later, add
+// golang.org/x/term and swap this for term.ReadPassword.
+func askPassword(prompt string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(prompt)
+
+	value, err := reader.ReadString('\n')
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(value)
 }
 
 func handleAI(reader *bufio.Reader) {
@@ -293,7 +451,7 @@ func request(method, path string, body any, out any) error {
 		reqBody = bytes.NewReader(payload)
 	}
 
-	req, err := http.NewRequest(method, apiURL+path, reqBody)
+	req, err := http.NewRequest(method, config.APIURL+path, reqBody)
 	if err != nil {
 		return err
 	}
@@ -301,8 +459,8 @@ func request(method, path string, body any, out any) error {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	if token := os.Getenv("DEVPILOT_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+	if config.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+config.Token)
 	}
 
 	res, err := http.DefaultClient.Do(req)
@@ -315,6 +473,10 @@ func request(method, path string, body any, out any) error {
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
+	}
+
+	if res.StatusCode == http.StatusUnauthorized {
+		return fmt.Errorf("not authenticated — run `devpilot login`")
 	}
 
 	if res.StatusCode >= 300 {
@@ -337,6 +499,9 @@ DevPilot CLI
 Usage:
 
   devpilot init
+  devpilot login
+  devpilot logout
+  devpilot whoami
   devpilot status
   devpilot next
 
@@ -383,16 +548,14 @@ AI:
 }
 
 func initProject() {
-	if err := os.WriteFile(
-		".devpilot",
-		[]byte("api_url="+apiURL+"\n"),
-		0644,
-	); err != nil {
+	config.APIURL = apiURL
+
+	if err := saveConfig(); err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
-	fmt.Println("Initialized DevPilot in this directory.")
+	fmt.Println("Initialized DevPilot in this directory. Run `devpilot login` to authenticate.")
 }
 
 func status() {
@@ -689,7 +852,6 @@ func createTask(reader *bufio.Reader) {
 		"description": ask(reader, "Description: "),
 		"priority":    strings.ToUpper(ask(reader, "Priority (LOW, MEDIUM, HIGH): ")),
 		"order":       id(reader, "Order: "),
-		"xpReward":    id(reader, "XP reward: "),
 		"githubUrl":   ask(reader, "GitHub repository URL (optional): "),
 	}
 
@@ -774,7 +936,6 @@ func updateTask(reader *bufio.Reader) {
 		"title":       ask(reader, "New title: "),
 		"description": ask(reader, "New description: "),
 		"priority":    strings.ToUpper(ask(reader, "Priority: ")),
-		"xpReward":    id(reader, "XP reward: "),
 		"githubUrl":   ask(reader, "GitHub repository URL (optional): "),
 	}
 
@@ -1003,7 +1164,6 @@ func generatePlan(reader *bufio.Reader) {
 			"title":       milestone.Title,
 			"description": milestone.Description,
 			"order":       i + 1,
-			"xpReward":    milestone.XPReward,
 		}
 
 		if err := request(
@@ -1032,7 +1192,6 @@ func generatePlan(reader *bufio.Reader) {
 				"description": task.Description,
 				"priority":    task.Priority,
 				"order":       j + 1,
-				"xpReward":    task.XPReward,
 			}
 
 			if err := request(

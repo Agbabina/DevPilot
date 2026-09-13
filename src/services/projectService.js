@@ -1,23 +1,22 @@
- function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }
-import api from './api';
+ function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }import api from './api';
 
 /* =========================
    PROJECT
 ========================= */
 
 export const ProjectPriority = {
-LOW: 'LOW',
-MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
 
 } ;
  
 
 export const ProjectStatus = {
-NOT_STARTED: 'NOT_STARTED',
-IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
-PAUSED: 'PAUSED',
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  PAUSED: 'PAUSED',
 
 } ;
  
@@ -45,9 +44,9 @@ PAUSED: 'PAUSED',
 ========================= */
 
 export const MilestoneStatus = {
-TODO: 'TODO',
-IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
 
 } ;
  
@@ -74,20 +73,23 @@ COMPLETED: 'COMPLETED',
 ========================= */
 
 export const TaskStatus = {
-TODO: 'TODO',
-IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
 
 } ;
  
 
 export const TaskPriority = {
-LOW: 'LOW',
-MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
 
 } ;
  
+
+
+
 
 
 
@@ -199,43 +201,43 @@ export const projectService = {
   },
 
   async getOne(
-    id,
+      id,
   ) {
     const response = await api.get(
-      `/projects/${id}`,
+        `/projects/${id}`,
     );
 
     return response.data;
   },
 
   async create(
-    data,
+      data,
   ) {
     const response = await api.post(
-      '/projects',
-      data,
+        '/projects',
+        data,
     );
 
     return response.data;
   },
 
   async update(
-    id,
-    data,
+      id,
+      data,
   ) {
     const response = await api.patch(
-      `/projects/${id}`,
-      data,
+        `/projects/${id}`,
+        data,
     );
 
     return response.data;
   },
 
   async delete(
-    id,
+      id,
   ) {
     await api.delete(
-      `/projects/${id}`,
+        `/projects/${id}`,
     );
   },
 
@@ -244,33 +246,33 @@ export const projectService = {
   ===================== */
 
   async getMilestones(
-    projectId,
+      projectId,
   ) {
     const response = await api.get(
-      `/projects/${projectId}/milestones`,
+        `/projects/${projectId}/milestones`,
     );
 
     return response.data;
   },
 
   async createMilestone(
-    projectId,
-    data,
+      projectId,
+      data,
   ) {
     const response = await api.post(
-      `/projects/${projectId}/milestones`,
-      data,
+        `/projects/${projectId}/milestones`,
+        data,
     );
 
     return response.data;
   },
 
   async getMilestone(
-    id,
+      id,
   ) {
     try {
       const response = await api.get(
-        `/milestones/${id}`,
+          `/milestones/${id}`,
       );
 
       return response.data;
@@ -285,22 +287,22 @@ export const projectService = {
   },
 
   async updateMilestone(
-    id,
-    data,
+      id,
+      data,
   ) {
     const response = await api.patch(
-      `/milestones/${id}`,
-      data,
+        `/milestones/${id}`,
+        data,
     );
 
     return response.data;
   },
 
   async deleteMilestone(
-    id,
+      id,
   ) {
     await api.delete(
-      `/milestones/${id}`,
+        `/milestones/${id}`,
     );
   },
 
@@ -309,67 +311,54 @@ export const projectService = {
   ===================== */
 
   async getTasks(
-    milestoneId,
+      milestoneId,
   ) {
     const response = await api.get(
-      `/milestones/${milestoneId}/tasks`,
+        `/milestones/${milestoneId}/tasks`,
     );
 
     return response.data;
   },
 
   async createTask(
-    milestoneId,
-    data,
+      milestoneId,
+      data,
   ) {
     const response = await api.post(
-      `/milestones/${milestoneId}/tasks`,
-      data,
+        `/milestones/${milestoneId}/tasks`,
+        data,
     );
 
     return response.data;
   },
 
   async getTask(
-    id,
+      id,
   ) {
     const response = await api.get(
-      `/tasks/${id}`,
+        `/tasks/${id}`,
     );
 
     return response.data;
   },
 
   async updateTask(
-    id,
-    data,
+      id,
+      data,
   ) {
     const response = await api.patch(
-      `/tasks/${id}`,
-      data,
+        `/tasks/${id}`,
+        data,
     );
 
     return response.data;
   },
 
   async deleteTask(
-    id,
+      id,
   ) {
     await api.delete(
-      `/tasks/${id}`,
+        `/tasks/${id}`,
     );
   },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-

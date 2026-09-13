@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { register } from "../services/user";
 import { useAuth } from "../auth/AuthContext";
 import Hero from "../Component/Hero";
+import BackgroundScene from "../Component/BackgroundScene";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -50,24 +51,25 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-6 py-8 text-slate-900 transition-colors bg-white dark:bg-slate-950 dark:text-white">
-      <div className="mx-auto flex max-w-6xl justify-end">
+    <main className="auth-shell min-h-screen bg-slate-100 px-4 py-8 text-slate-900 transition-colors bg-white dark:bg-slate-950 dark:text-white">
+      <BackgroundScene />
+      <div className="relative z-10 mx-auto flex max-w-6xl justify-end">
         <button
           type="button"
           onClick={() =>
             setTheme(theme === "light" ? "dark" : "light")
           }
-          className="rounded-xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition hover:scale-105 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+          className="rounded-xl border border-slate-200 bg-white/90 p-3 text-slate-700 shadow-sm backdrop-blur transition hover:scale-105 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200"
           aria-label="Toggle theme"
         >
           {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
         </button>
       </div>
 
-      <section className="mx-auto grid min-h-[80vh] max-w-6xl items-center gap-12 lg:grid-cols-2">
+      <section className="relative z-10 mx-auto grid min-h-[80vh] max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="hidden lg:block">
           <div className="mb-6 flex items-center gap-3">
-            <div className="rounded-2xl bg-cyan-400 p-3 text-slate-950">
+            <div className="rounded-2xl bg-cyan-400 p-3 text-slate-950 shadow-lg shadow-cyan-400/30">
               <Zap size={24} />
             </div>
             <span className="text-xl font-black tracking-tight">
@@ -77,7 +79,7 @@ export default function AuthPage() {
           <Hero />
         </div>
 
-        <div className="mx-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+        <div className="mx-auto w-full max-w-md rounded-[2rem] border border-slate-200/80 bg-white/90 p-8 shadow-2xl shadow-cyan-950/10 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
           <div className="mb-8">
             <p className="mb-2 text-sm font-bold uppercase tracking-widest text-cyan-500">
               {mode === "login" ? "Welcome back" : "Get started"}

@@ -12,6 +12,7 @@ import Rewards from "./Pages/Rewards";
 import Settings from "./Pages/Settings";
 import Resources from "./Pages/Resources";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import SeoHead from "./Component/SeoHead";
 
 function App() {
   useEffect(() => {
@@ -20,6 +21,7 @@ function App() {
   }, []);
   return (
     <BrowserRouter>
+      <SeoHead />
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
 

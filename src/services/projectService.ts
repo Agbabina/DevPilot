@@ -1,4 +1,3 @@
-
 import api from './api';
 
 /* =========================
@@ -6,18 +5,18 @@ import api from './api';
 ========================= */
 
 export const ProjectPriority = {
-LOW: 'LOW',
-MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
 
 } as const;
 export type ProjectPriority = (typeof ProjectPriority)[keyof typeof ProjectPriority];
 
 export const ProjectStatus = {
-NOT_STARTED: 'NOT_STARTED',
-IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
-PAUSED: 'PAUSED',
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  PAUSED: 'PAUSED',
 
 } as const;
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
@@ -45,9 +44,9 @@ export interface Project {
 ========================= */
 
 export const MilestoneStatus = {
-TODO: 'TODO',
-IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
 
 } as const;
 export type MilestoneStatus = (typeof MilestoneStatus)[keyof typeof MilestoneStatus];
@@ -74,17 +73,17 @@ export interface Milestone {
 ========================= */
 
 export const TaskStatus = {
-TODO: 'TODO',
-IN_PROGRESS: 'IN_PROGRESS',
-COMPLETED: 'COMPLETED',
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
 
 } as const;
 export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 export const TaskPriority = {
-LOW: 'LOW',
-MEDIUM: 'MEDIUM',
-HIGH: 'HIGH',
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
 
 } as const;
 export type TaskPriority = (typeof TaskPriority)[keyof typeof TaskPriority];
@@ -136,6 +135,7 @@ export interface CreateMilestoneData {
   status?: MilestoneStatus;
   order?: number;
   xpReward?: number;
+  completedAt?: string | null;
 }
 
 export interface CreateTaskData {
@@ -148,6 +148,8 @@ export interface CreateTaskData {
   priority?: TaskPriority;
   order?: number;
   xpReward?: number;
+  dueDate?: string | null;
+  completedAt?: string | null;
 }
 
 /* =========================
@@ -155,13 +157,13 @@ export interface CreateTaskData {
 ========================= */
 
 export type UpdateProjectData =
-  Partial<CreateProjectData>;
+    Partial<CreateProjectData>;
 
 export type UpdateMilestoneData =
-  Partial<CreateMilestoneData>;
+    Partial<CreateMilestoneData>;
 
 export type UpdateTaskData =
-  Partial<CreateTaskData>;
+    Partial<CreateTaskData>;
 
 /* =========================
    SERVICE
@@ -199,43 +201,43 @@ export const projectService = {
   },
 
   async getOne(
-    id: number,
+      id: number,
   ): Promise<Project> {
     const response = await api.get(
-      `/projects/${id}`,
+        `/projects/${id}`,
     );
 
     return response.data;
   },
 
   async create(
-    data: CreateProjectData,
+      data: CreateProjectData,
   ): Promise<Project> {
     const response = await api.post(
-      '/projects',
-      data,
+        '/projects',
+        data,
     );
 
     return response.data;
   },
 
   async update(
-    id: number,
-    data: UpdateProjectData,
+      id: number,
+      data: UpdateProjectData,
   ): Promise<Project> {
     const response = await api.patch(
-      `/projects/${id}`,
-      data,
+        `/projects/${id}`,
+        data,
     );
 
     return response.data;
   },
 
   async delete(
-    id: number,
+      id: number,
   ): Promise<void> {
     await api.delete(
-      `/projects/${id}`,
+        `/projects/${id}`,
     );
   },
 
@@ -244,33 +246,33 @@ export const projectService = {
   ===================== */
 
   async getMilestones(
-    projectId: number,
+      projectId: number,
   ): Promise<Milestone[]> {
     const response = await api.get(
-      `/projects/${projectId}/milestones`,
+        `/projects/${projectId}/milestones`,
     );
 
     return response.data;
   },
 
   async createMilestone(
-    projectId: number,
-    data: CreateMilestoneData,
+      projectId: number,
+      data: CreateMilestoneData,
   ): Promise<Milestone> {
     const response = await api.post(
-      `/projects/${projectId}/milestones`,
-      data,
+        `/projects/${projectId}/milestones`,
+        data,
     );
 
     return response.data;
   },
 
   async getMilestone(
-    id: number,
+      id: number,
   ): Promise<Milestone | null> {
     try {
       const response = await api.get(
-        `/milestones/${id}`,
+          `/milestones/${id}`,
       );
 
       return response.data;
@@ -285,22 +287,22 @@ export const projectService = {
   },
 
   async updateMilestone(
-    id: number,
-    data: UpdateMilestoneData,
+      id: number,
+      data: UpdateMilestoneData,
   ): Promise<Milestone> {
     const response = await api.patch(
-      `/milestones/${id}`,
-      data,
+        `/milestones/${id}`,
+        data,
     );
 
     return response.data;
   },
 
   async deleteMilestone(
-    id: number,
+      id: number,
   ): Promise<void> {
     await api.delete(
-      `/milestones/${id}`,
+        `/milestones/${id}`,
     );
   },
 
@@ -309,67 +311,54 @@ export const projectService = {
   ===================== */
 
   async getTasks(
-    milestoneId: number,
+      milestoneId: number,
   ): Promise<Task[]> {
     const response = await api.get(
-      `/milestones/${milestoneId}/tasks`,
+        `/milestones/${milestoneId}/tasks`,
     );
 
     return response.data;
   },
 
   async createTask(
-    milestoneId: number,
-    data: CreateTaskData,
+      milestoneId: number,
+      data: CreateTaskData,
   ): Promise<Task> {
     const response = await api.post(
-      `/milestones/${milestoneId}/tasks`,
-      data,
+        `/milestones/${milestoneId}/tasks`,
+        data,
     );
 
     return response.data;
   },
 
   async getTask(
-    id: number,
+      id: number,
   ): Promise<Task> {
     const response = await api.get(
-      `/tasks/${id}`,
+        `/tasks/${id}`,
     );
 
     return response.data;
   },
 
   async updateTask(
-    id: number,
-    data: UpdateTaskData,
+      id: number,
+      data: UpdateTaskData,
   ): Promise<Task> {
     const response = await api.patch(
-      `/tasks/${id}`,
-      data,
+        `/tasks/${id}`,
+        data,
     );
 
     return response.data;
   },
 
   async deleteTask(
-    id: number,
+      id: number,
   ): Promise<void> {
     await api.delete(
-      `/tasks/${id}`,
+        `/tasks/${id}`,
     );
   },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-

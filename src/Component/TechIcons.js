@@ -1,4 +1,4 @@
-import type { IconType } from "react-icons";
+ function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } }
 import {
     SiReact,
     SiVuedotjs,
@@ -51,14 +51,14 @@ import {
     SiCplusplus,
 } from "react-icons/si";
 
-export interface TechIconInfo {
-    icon: IconType;
-    color: string;
-    label: string;
-}
+
+
+
+
+
 
 // Normalizes "React.js" / "C#" / ".NET" / "Node JS" etc. into a lookup key.
-function normalizeTechName(tech: string): string {
+function normalizeTechName(tech) {
     return tech
         .toLowerCase()
         .trim()
@@ -67,7 +67,7 @@ function normalizeTechName(tech: string): string {
         .replace(/[^a-z0-9]/g, "");
 }
 
-const TECH_ICON_MAP: Record<string, TechIconInfo> = {
+const TECH_ICON_MAP = {
     react: { icon: SiReact, color: "#61DAFB", label: "React" },
     reactjs: { icon: SiReact, color: "#61DAFB", label: "React" },
     vue: { icon: SiVuedotjs, color: "#4FC08D", label: "Vue" },
@@ -139,7 +139,7 @@ const TECH_ICON_MAP: Record<string, TechIconInfo> = {
     yarn: { icon: SiYarn, color: "#2C8EBB", label: "Yarn" },
 };
 
-export function getTechIcon(technology: string): TechIconInfo | null {
+export function getTechIcon(technology) {
     const key = normalizeTechName(technology);
-    return TECH_ICON_MAP[key] ?? null;
+    return _nullishCoalesce(TECH_ICON_MAP[key], () => ( null));
 }
