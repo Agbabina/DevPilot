@@ -1,14 +1,23 @@
-import axios from "axios";
+import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "https://devpilot-api-vsh2.onrender.com",
+  /*baseURL: import.meta.env.DEV
+    ? "/api"
+    : (import.meta.env.VITE_API_URL ?? "https://devpilot-api-vsh2.onrender.com"),
   headers: {
     "Content-Type": "application/json",
+  },*/
+  baseURL: import.meta.env.DEV
+    ? 'http://localhost:3000'
+    : (import.meta.env.VITE_API_URL ??
+      'https://devpilot-api-vsh2.onrender.com'),
+  headers: {
+    'Content-Type': 'application/json',
   },
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem('accessToken');
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -55,7 +64,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;

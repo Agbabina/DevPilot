@@ -3,6 +3,8 @@ import { Flame, Bolt, Coins } from "lucide-react";
 import { getCurrentUser } from "../services/user";
 import type {User} from "../services/user";
 
+export const USER_UPDATED_EVENT = "user:updated";
+
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
 
@@ -17,6 +19,16 @@ export default function Header() {
     }
 
     loadUser();
+
+    const handleUserUpdate = () => {
+      void loadUser();
+    };
+
+    window.addEventListener(USER_UPDATED_EVENT, handleUserUpdate);
+
+    return () => {
+      window.removeEventListener(USER_UPDATED_EVENT, handleUserUpdate);
+    };
   }, []);
 
   if (!user) {

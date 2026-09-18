@@ -27,10 +27,9 @@ export interface Project {
   description?: string;
   goals?: string;
   requirements?: string;
-  integrations?: string[];
   githubUrl?: string | null;
   deadline?: string | null;
-  technologies?: string[] | null;
+  technologies: string[]
   priority: ProjectPriority;
   status: ProjectStatus;
   progress: number;
@@ -165,6 +164,34 @@ export type UpdateMilestoneData =
 export type UpdateTaskData =
     Partial<CreateTaskData>;
 
+function normalizeTechnologies(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter((technology): technology is string => typeof technology === "string")
+      .map((technology) => technology.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return normalizeTechnologies(parsed);
+  } catch {
+    // Some older records store technologies as a comma-separated string.
+  }
+
+  return value.split(",").map((technology) => technology.trim()).filter(Boolean);
+}
+
+function normalizeProject(value: unknown): Project {
+  const project = value as Omit<Project, "technologies"> & { technologies?: unknown };
+  return {
+    ...project,
+    technologies: normalizeTechnologies(project.technologies),
+  };
+}
+
 /* =========================
    SERVICE
 ========================= */
@@ -178,6 +205,7 @@ export const projectService = {
       return {
         description: `A practical starter plan for ${data.name}.`,
         xpReward: 500,
+        technologies: [],
         milestones: [
           { title: "Foundation", description: "Set up the project foundation.", xpReward: 150, tasks: [{ title: "Define the scope", description: "Document the requirements and success criteria.", priority: "HIGH", xpReward: 50 }, { title: "Create the project structure", description: "Set up the initial folders and configuration.", priority: "MEDIUM", xpReward: 40 }] },
           { title: "Core implementation", description: "Build the main experience.", xpReward: 200, tasks: [{ title: "Implement the main workflow", description: "Build the primary user flow.", priority: "HIGH", xpReward: 75 }, { title: "Add validation", description: "Handle invalid input and common errors.", priority: "MEDIUM", xpReward: 40 }] },
@@ -197,7 +225,7 @@ export const projectService = {
   async getAll(): Promise<Project[]> {
     const response = await api.get('/projects');
 
-    return response.data;
+    return Array.isArray(response.data) ? response.data.map(normalizeProject) : [];
   },
 
   async getOne(
@@ -207,7 +235,7 @@ export const projectService = {
         `/projects/${id}`,
     );
 
-    return response.data;
+    return normalizeProject(response.data);
   },
 
   async create(
@@ -218,7 +246,7 @@ export const projectService = {
         data,
     );
 
-    return response.data;
+    return normalizeProject(response.data);
   },
 
   async update(
@@ -230,7 +258,7 @@ export const projectService = {
         data,
     );
 
-    return response.data;
+    return normalizeProject(response.data);
   },
 
   async delete(

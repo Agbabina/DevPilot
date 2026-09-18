@@ -1,14 +1,124 @@
-import { CheckSquare, Sparkles, TimerReset } from "lucide-react";
-import { useEffect, useState } from "react";
-import Header from "../Component/Header";
-import Sidebar from "../Component/Sidebar";
-import { projectService, type Task } from "../services/projectService";
+import { CheckSquare, Sparkles, TimerReset } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import Header from '../Component/Header';
+import Sidebar from '../Component/Sidebar';
+import { projectService, type Task } from '../services/projectService';
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { (async () => { try { const projects = await projectService.getAll(); const milestones = (await Promise.all(projects.map(p => projectService.getMilestones(p.id)))).flat(); const result = (await Promise.all(milestones.map(m => projectService.getTasks(m.id)))).flat(); setTasks(result); } finally { setLoading(false); } })(); }, []);
-  const open = tasks.filter(t => t.status !== "COMPLETED");
-  const done = tasks.filter(t => t.status === "COMPLETED");
-  return <div className="min-h-screen bg-slate-50 text-slate-900"><Header /><div className="flex"><Sidebar /><main className="min-w-0 flex-1 px-5 py-6 md:px-10 md:py-10"><div className="mb-8 flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-600">Task board</p><h1 className="text-3xl font-bold tracking-tight">Stay focused on what matters next</h1></div><div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-700"><div className="flex items-center gap-2 font-semibold"><CheckSquare size={16}/> {tasks.length} tasks</div></div></div>{loading ? <p className="text-sm text-slate-500">Loading tasks...</p> : tasks.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center"><h2 className="font-semibold">No tasks yet</h2><p className="mt-2 text-sm text-slate-500">Create a project and milestone to start planning work.</p></div> : <div className="grid gap-6 lg:grid-cols-2">{[["Open",open],["Completed",done]].map(([title,items])=><section key={title as string} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold">{title as string}</h2><span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">{(items as Task[]).length}</span></div><ul className="space-y-3">{(items as Task[]).map(task=><li key={task.id} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3"><CheckSquare size={18} className="mt-0.5 text-cyan-500"/><div><span className="text-sm text-slate-700">{task.title}</span><div className="mt-1 flex gap-2 text-[10px] text-slate-400">{task.category && <span>{task.category}</span>}{task.dueDate && <span>due {new Date(task.dueDate).toLocaleDateString()}</span>}</div></div></li>)}</ul></section>)}</div>}<section className="mt-6 rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white"><p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300"><Sparkles size={15}/> AI planning</p><h2 className="mt-2 text-xl font-semibold">Turn your next milestone into focused tasks</h2><div className="mt-3 flex items-center gap-2 text-sm text-slate-300"><TimerReset size={16}/> Your tasks are synced from your projects</div></section></main></div></div>;
+  useEffect(() => {
+    (async () => {
+      try {
+        const projects = await projectService.getAll();
+        const milestones = (
+          await Promise.all(
+            projects.map((p) => projectService.getMilestones(p.id))
+          )
+        ).flat();
+        const result = (
+          await Promise.all(
+            milestones.map((m) => projectService.getTasks(m.id))
+          )
+        ).flat();
+        setTasks(result);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  const open = tasks.filter((t) => t.status !== 'COMPLETED');
+  const done = tasks.filter((t) => t.status === 'COMPLETED');
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <Header />
+      <div className="flex">
+        <Sidebar />
+        <main className="min-w-0 flex-1 px-5 py-6 md:px-10 md:py-10">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-600">
+                Task board
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Stay focused on what matters next
+              </h1>
+            </div>
+            <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-700">
+              <div className="flex items-center gap-2 font-semibold">
+                <CheckSquare size={16} /> {tasks.length} tasks
+              </div>
+            </div>
+          </div>
+          {loading ? (
+            <p className="text-sm text-slate-500">Loading tasks...</p>
+          ) : tasks.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+              <h2 className="font-semibold">No tasks yet</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                Create a project and milestone to start planning work.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {[
+                ['Open', open],
+                ['Completed', done],
+              ].map(([title, items]) => (
+                <section
+                  key={title as string}
+                  className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">{title as string}</h2>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">
+                      {(items as Task[]).length}
+                    </span>
+                  </div>
+                  <ul className="space-y-3">
+                    {(items as Task[]).map((task) => (
+                      <li
+                        key={task.id}
+                        className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3"
+                      >
+                        <CheckSquare
+                          size={18}
+                          className="mt-0.5 text-cyan-500"
+                        />
+                        <div>
+                          <span className="text-sm text-slate-700">
+                            {task.title}
+                          </span>
+                          <div className="mt-1 flex gap-2 text-[10px] text-slate-400">
+                            {task.category && <span>{task.category}</span>}
+                            {task.dueDate && (
+                              <span>
+                                due{' '}
+                                {new Date(task.dueDate).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          )}
+          <section className="mt-6 rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white">
+            <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
+              <Sparkles size={15} /> AI planning
+            </p>
+            <h2 className="mt-2 text-xl font-semibold">
+              Turn your next milestone into focused tasks
+            </h2>
+            <div className="mt-3 flex items-center gap-2 text-sm text-slate-300">
+              <TimerReset size={16} /> Your tasks are synced from your projects
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
 }

@@ -1,14 +1,23 @@
- function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }import axios from "axios";
+ function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }import axios from 'axios';
 
 const api = axios.create({
-  baseURL: _nullishCoalesce(import.meta.env.VITE_API_URL, () => ( "https://devpilot-api-vsh2.onrender.com")),
+  /*baseURL: import.meta.env.DEV
+    ? "/api"
+    : (import.meta.env.VITE_API_URL ?? "https://devpilot-api-vsh2.onrender.com"),
   headers: {
     "Content-Type": "application/json",
+  },*/
+  baseURL: import.meta.env.DEV
+    ? 'http://localhost:3000'
+    : (_nullishCoalesce(import.meta.env.VITE_API_URL, () => (
+      'https://devpilot-api-vsh2.onrender.com'))),
+  headers: {
+    'Content-Type': 'application/json',
   },
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem('accessToken');
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -55,7 +64,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;

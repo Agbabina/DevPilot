@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 
 import { Milestone } from '../milestones/milestones.entity';
 import { MilestonesService } from '../milestones/milestones.service';
+import { ProgressionService } from '../progression/progression.service';
 
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -28,6 +29,7 @@ export class TasksService {
     private readonly milestoneRepository: Repository<Milestone>,
 
     private readonly milestonesService: MilestonesService,
+    private readonly progressionService: ProgressionService,
   ) {}
 
   private applyCompletionFields(
@@ -133,6 +135,7 @@ export class TasksService {
   ) {
     const task =
       await this.findOne(id);
+    const wasCompleted = task.status === TaskStatus.COMPLETED;
 
     Object.assign(
       task,
@@ -143,6 +146,25 @@ export class TasksService {
 
     const updatedTask =
       await this.taskRepository.save(task);
+
+    if (
+      updatedTask.status === TaskStatus.COMPLETED &&
+      !wasCompleted
+    ) {
+      const milestone = await this.milestoneRepository.findOne({
+        where: { id: updatedTask.milestoneId },
+        relations: { project: true },
+      });
+
+      if (milestone?.project?.ownerId) {
+        await this.progressionService.awardXp(
+          milestone.project.ownerId,
+          'TASK_COMPLETED',
+          Number(updatedTask.xpReward || 0),
+          `Task complete: ${updatedTask.title}`,
+        );
+      }
+    }
 
     await this.milestonesService
       .recalculateMilestoneProgress(

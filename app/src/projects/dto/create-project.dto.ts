@@ -28,13 +28,14 @@ export class CreateProjectDto {
   goals?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({each: true})
+  technologies: string[];
+
+  @IsOptional()
   @IsString()
   requirements?: string;
 
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  integrations?: string[];
 
   @IsOptional()
   githubUrl?: string;
