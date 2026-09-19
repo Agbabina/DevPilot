@@ -10,6 +10,7 @@ import BackgroundScene from "../Component/BackgroundScene";
 import { projectService, type Project } from "../services/projectService";
 import { useAuth } from "../auth/AuthContext";
 import heroImage from "../assets/hero.png";
+import RecentTasks from "../Component/RecentTasks";
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -63,7 +64,8 @@ export default function Dashboard() {
             <Card header="Milestones" description={String(completed)} children="Completed" icon={Bot} />
           </div>
 
-          <div className="mt-7 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="mt-7 grid gap-6 xl:grid-cols-2]">
+            <RecentTasks></RecentTasks>
             <RecentProjects />
             <DeveloperCopilotSection />
           </div>

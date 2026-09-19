@@ -5,9 +5,11 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { QueryFailedError } from "typeorm";
 import { User } from "../auth/user.entity";
 import { XpLog } from "./xp-log.entity";
 import { RewardReason, XP_REWARDS } from "./rewards";
+import { Task, TaskStatus } from "../tasks/tasks.entity";
 
 export const COIN_ITEMS = {
   STREAK_SHIELD: {
@@ -32,6 +34,8 @@ export const COIN_ITEMS = {
   },
 } as const;
 
+const TASK_COMPLETION_COINS = 10;
+
 @Injectable()
 export class ProgressionService {
   constructor(
@@ -39,6 +43,8 @@ export class ProgressionService {
       private readonly users: Repository<User>,
       @InjectRepository(XpLog)
       private readonly xpLogs: Repository<XpLog>,
+      @InjectRepository(Task)
+      private readonly tasks: Repository<Task>,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -75,6 +81,12 @@ export class ProgressionService {
     }
 
     user.totalXp += amount;
+
+    // Reward coins whenever a task is completed. Keep this separate from
+    // level-up coins so every completed task immediately affects the balance.
+    if (reason === "TASK_COMPLETED") {
+      user.coins += TASK_COMPLETION_COINS;
+    }
 
     // Calculate level progression
     const newLevel = this.levelFromXp(user.totalXp);
@@ -150,7 +162,8 @@ export class ProgressionService {
       };
     }
 
-    // 2. Prevent duplicate XP for the same commit (Deduplication check)
+    // 2. Prevent duplicate XP for the same commit (fast-path check; the
+    // database unique constraint below also protects concurrent webhooks).
     const existingLog = await this.xpLogs.findOne({
       where: { userId: user.id, metadata: commitHash },
     });
@@ -159,25 +172,71 @@ export class ProgressionService {
       return { status: "ignored", reason: "Commit already rewarded" };
     }
 
-    // 3. Optional Bonus XP: Check if commit references an app task ID
+    // 3. Resolve and validate an optional task reference.
     let bonusXp = 0;
-    if (/#task-\d+/i.test(commitMessage)) {
-      bonusXp += 25; // Bonus XP for linking commits to tasks
+    const taskMatch = commitMessage.match(/#task-(\d+)\b/i);
+    const taskId = taskMatch ? Number(taskMatch[1]) : undefined;
+    let linkedTask: Task | null = null;
+
+    if (taskId) {
+      linkedTask = await this.tasks.findOne({
+        where: { id: taskId },
+        relations: { milestone: { project: true } },
+      });
+
+      if (!linkedTask || linkedTask.milestone?.project?.ownerId !== user.id) {
+        return {
+          status: "ignored",
+          reason: "Task not found or does not belong to the linked user",
+          taskId,
+        };
+      }
+
+      bonusXp = 25;
+
+      if (linkedTask.status !== TaskStatus.COMPLETED) {
+        linkedTask.status = TaskStatus.COMPLETED;
+        linkedTask.completedAt = linkedTask.completedAt ?? new Date();
+        await this.tasks.save(linkedTask);
+
+        try {
+          await this.awardXp(
+            user.id,
+            "TASK_COMPLETED",
+            Number(linkedTask.xpReward || 0),
+            `github-task:${linkedTask.id}`,
+          );
+        } catch (error) {
+          // A concurrent delivery may have completed and rewarded this task
+          // after our status check. The unique XP-log constraint makes this
+          // second task reward a no-op, while the commit reward still runs.
+          if (!(error instanceof QueryFailedError)) throw error;
+        }
+      }
     }
 
     // 4. Award commit XP
-    const result = await this.awardXp(
-        user.id,
-        "GITHUB_COMMIT",
-        bonusXp,
-        commitHash,
-    );
+    let result;
+    try {
+      result = await this.awardXp(
+          user.id,
+          "GITHUB_COMMIT",
+          bonusXp,
+          commitHash,
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        return { status: "ignored", reason: "Commit already rewarded" };
+      }
+      throw error;
+    }
 
     return {
       status: "success",
       userId: user.id,
       commitHash,
       repoName,
+      taskId,
       ...result,
     };
   }
@@ -202,6 +261,10 @@ export class ProgressionService {
   async purchaseItem(userId: number, item: keyof typeof COIN_ITEMS) {
     const product = COIN_ITEMS[item];
     if (!product) throw new BadRequestException("Unknown shop item");
+
+    if (item === "PROFILE_THEME" || item === "CHALLENGE_REROLL") {
+      throw new BadRequestException(`${item} is not available yet`);
+    }
 
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException("User not found");

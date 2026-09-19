@@ -197,6 +197,18 @@ function normalizeProject(value: unknown): Project {
 ========================= */
 
 export const projectService = {
+  async getAiContext() {
+    const projects = await this.getAll();
+    const projectContext = await Promise.all(projects.map(async (project) => {
+      const milestones = await this.getMilestones(project.id);
+      const milestonesWithTasks = await Promise.all(milestones.map(async (milestone) => ({
+        ...milestone,
+        tasks: await this.getTasks(milestone.id),
+      })));
+      return { ...project, milestones: milestonesWithTasks };
+    }));
+    return { projects: projectContext };
+  },
   async generateProject(data: { name: string; goal: string; priority: string }) {
     try {
       const response = await api.post('/ai/projects/generate', data);
@@ -217,6 +229,14 @@ export const projectService = {
   async generateTasks(data: { milestoneTitle: string; milestoneDescription?: string; projectName?: string; projectDescription?: string; previousTasks?: string[]; followUpPrompt?: string }) {
     const response = await api.post('/ai/tasks/generate', data);
     return response.data as { tasks: Array<{ title: string; description: string; priority: TaskPriority }> };
+  },
+  async generateCode(data: { prompt: string; context?: unknown }) {
+    const response = await api.post('/ai/code/generate', data);
+    return response.data as { code?: string; explanation?: string; filename?: string; language?: string };
+  },
+  async assist(data: { action: string; context?: unknown }) {
+    const response = await api.post('/ai/assist', data);
+    return response.data as { answer?: string; result?: string };
   },
   /* =====================
      PROJECTS
@@ -389,4 +409,19 @@ export const projectService = {
         `/tasks/${id}`,
     );
   },
+  async getTasksAddedToday(): Promise<Task[]>{
+    const projects = await this.getAll();
+    const tasks: Task[]= [];
+
+    for (const project of projects) {
+      const milesones = await this.getMilestones(project.id);
+
+      for (const milestone of milesones) {
+        const milestoneTasks = await this.getTasks(milestone.id)
+        tasks.push (...milestoneTasks);
+      }
+    }
+    const today = new Date().toISOString().slice(0, 10)
+    return tasks.filter(task=>(task.createdAt.slice(0,10) === today));
+  }
 };

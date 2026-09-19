@@ -197,6 +197,18 @@ function normalizeProject(value) {
 ========================= */
 
 export const projectService = {
+  async getAiContext() {
+    const projects = await this.getAll();
+    const projectContext = await Promise.all(projects.map(async (project) => {
+      const milestones = await this.getMilestones(project.id);
+      const milestonesWithTasks = await Promise.all(milestones.map(async (milestone) => ({
+        ...milestone,
+        tasks: await this.getTasks(milestone.id),
+      })));
+      return { ...project, milestones: milestonesWithTasks };
+    }));
+    return { projects: projectContext };
+  },
   async generateProject(data) {
     try {
       const response = await api.post('/ai/projects/generate', data);
@@ -216,6 +228,14 @@ export const projectService = {
   },
   async generateTasks(data) {
     const response = await api.post('/ai/tasks/generate', data);
+    return response.data ;
+  },
+  async generateCode(data) {
+    const response = await api.post('/ai/code/generate', data);
+    return response.data ;
+  },
+  async assist(data) {
+    const response = await api.post('/ai/assist', data);
     return response.data ;
   },
   /* =====================
@@ -389,4 +409,19 @@ export const projectService = {
         `/tasks/${id}`,
     );
   },
+  async getTasksAddedToday(){
+    const projects = await this.getAll();
+    const tasks= [];
+
+    for (const project of projects) {
+      const milesones = await this.getMilestones(project.id);
+
+      for (const milestone of milesones) {
+        const milestoneTasks = await this.getTasks(milestone.id)
+        tasks.push (...milestoneTasks);
+      }
+    }
+    const today = new Date().toISOString().slice(0, 10)
+    return tasks.filter(task=>(task.createdAt.slice(0,10) === today));
+  }
 };

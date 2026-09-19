@@ -14,6 +14,7 @@ import {
   Target,
   ListTodo,
   ChevronRight,
+  MessageCircle,
 } from 'lucide-react';
 import Header, { USER_UPDATED_EVENT } from "../Component/Header";
 import { useNavigate, useParams } from 'react-router-dom';
@@ -60,6 +61,9 @@ export default function ProjectDetails() {
 
   // Feedback
   const [saveMessage, setSaveMessage] = useState('');
+  const [showContextBubble, setShowContextBubble] = useState(false);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [generationMessage, setGenerationMessage] = useState('');
 
   /*
    * --------------------------------------------------------------------------
@@ -188,6 +192,56 @@ export default function ProjectDetails() {
       setSaveMessage('Failed to save changes');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function generateProjectPlan() {
+    if (!project || !projectId || generatingPlan) return;
+
+    try {
+      setGeneratingPlan(true);
+      setGenerationMessage('Creating your project plan...');
+      const plan = await projectService.generateProject({
+        name: project.name,
+        goal: project.goals || description || `Build ${project.name}`,
+        priority: project.priority,
+      });
+
+      if (plan.description) {
+        setDescription(plan.description);
+        await projectService.update(Number(projectId), {
+          description: plan.description,
+        });
+      }
+
+      for (const milestone of plan.milestones || []) {
+        const createdMilestone = await projectService.createMilestone(
+          Number(projectId),
+          {
+            title: milestone.title,
+            description: milestone.description,
+            xpReward: Number(milestone.xpReward || 100),
+          },
+        );
+
+        for (const task of milestone.tasks || []) {
+          await projectService.createTask(createdMilestone.id, {
+            title: task.title,
+            description: task.description,
+            priority: task.priority || 'MEDIUM',
+            xpReward: Number(task.xpReward || 25),
+            status: TaskStatus.TODO,
+          });
+        }
+      }
+
+      await loadProjectData();
+      setGenerationMessage('Plan generated and added to your workspace.');
+    } catch (err) {
+      console.error(err);
+      setGenerationMessage('Could not generate a plan. Please try again.');
+    } finally {
+      setGeneratingPlan(false);
     }
   }
 
@@ -633,6 +687,44 @@ export default function ProjectDetails() {
                 </div>
               </div>
             </section>
+
+            {/* AI context bubble */}
+            <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-3">
+              {showContextBubble && (
+                <div className="w-[min(360px,calc(100vw-3rem))] rounded-3xl border border-cyan-500/20 bg-white p-5 shadow-2xl shadow-cyan-950/10 dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-500">
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black">Build this project with AI</h3>
+                      <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                        Generate a useful description, milestones, and actionable tasks from this project’s context.
+                      </p>
+                    </div>
+                  </div>
+                  {generationMessage && (
+                    <p className="mt-3 text-xs font-bold text-cyan-500">{generationMessage}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={generateProjectPlan}
+                    disabled={generatingPlan}
+                    className="mt-4 w-full rounded-xl bg-cyan-500 px-4 py-3 text-xs font-black text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {generatingPlan ? 'Generating plan...' : 'Generate description, milestones & tasks'}
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowContextBubble((open) => !open)}
+                aria-label="Open AI project planner"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-xl shadow-cyan-500/30 transition hover:scale-105 hover:bg-cyan-600"
+              >
+                {showContextBubble ? <X size={22} /> : <MessageCircle size={22} />}
+              </button>
+            </div>
 
             {/* ---------------------------------------------------------------- */}
             {/* Stats */}
