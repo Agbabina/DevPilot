@@ -11,6 +11,10 @@ DevPilot combines project and task workflows with AI-assisted explanations, repo
 - **Command guide:** https://dev-pilot-ashy.vercel.app/docs
 - **Source and feedback:** https://github.com/Agbabina/DevPilot
 
+### Download or install the CLI
+
+**Windows executable:** [Download `devpilot.exe`](https://github.com/Agbabina/DevPilot/releases/latest/download/devpilot.exe). Save it in a folder on your `PATH` to run `devpilot ship` from any project, or use the installer below to set up the command automatically.
+
 ### Install the CLI
 
 Windows PowerShell:
@@ -25,7 +29,7 @@ macOS / Linux:
 curl -fsSL https://raw.githubusercontent.com/Agbabina/DevPilot/feature/devpilot-git-inspection/scripts/install.sh | bash
 ```
 
-The installer downloads the latest release binary when one is published. Until the first binary release is available, it falls back to building from source and requires Go 1.25.7 or newer. macOS/Linux source fallback also needs `curl` and `unzip`.
+The Windows installer downloads the release as `devpilot.exe` and adds its folder to your user PATH. macOS/Linux installers use their platform-specific release binaries. If a release binary is unavailable, installers fall back to building from source and require Go 1.25.7 or newer; macOS/Linux source fallback also needs `curl` and `unzip`.
 
 Verify installation:
 

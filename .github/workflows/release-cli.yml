@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ../dist
-          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../dist/devpilot-windows-amd64.exe .
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../dist/devpilot.exe .
           GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../dist/devpilot-darwin-amd64 .
           GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../dist/devpilot-darwin-arm64 .
           GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../dist/devpilot-linux-amd64 .
@@ -39,7 +39,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            dist/devpilot-windows-amd64.exe
+            dist/devpilot.exe
             dist/devpilot-darwin-amd64
             dist/devpilot-darwin-arm64
             dist/devpilot-linux-amd64
