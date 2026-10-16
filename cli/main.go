@@ -123,6 +123,9 @@ func main() {
 	case "progress":
 		showProgress()
 
+	case "ship", "doctor", "resume", "daily", "pulse", "commit", "coffee", "matrix", "motivate":
+		handlePremiumCommand(reader, os.Args[1])
+
 	case "pr", "issue", "release", "inspect", "explain", "impact", "security", "deps", "test", "fix", "review":
 		handleDevtools(reader)
 
@@ -507,6 +510,12 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot ship [commit message]
+  devpilot doctor
+  devpilot resume
+  devpilot daily
+  devpilot pulse
+  devpilot commit
   devpilot pr draft|create|review|merge|checks
   devpilot issue [title]
   devpilot release <version>
@@ -517,7 +526,10 @@ Usage:
   devpilot deps
   devpilot test
   devpilot fix [error]
-  devpilot review
+  devpilot review --diff
+  devpilot coffee
+  devpilot matrix
+  devpilot motivate
 
 Projects:
   devpilot project create
