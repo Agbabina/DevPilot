@@ -47,7 +47,8 @@ Requests are replayed in order and remain queued after a failed replay. Authenti
 
 ```sh
 devpilot pr draft
+devpilot pr create
 devpilot message
 ```
 
-Creates `.devpilot/pr-draft.md` and `.devpilot/message-draft.txt` from the current Git diff/status and recent commit history. These are drafts for review; this command does not create a remote pull request or publish a message automatically.
+Creates `.devpilot/pr-draft.md` and `.devpilot/message-draft.txt` from the current Git diff/status and recent commit history. `devpilot pr create` generates the same drafts and then invokes GitHub CLI (`gh pr create`) to open a pull request; install `gh` and run `gh auth login` first. Review the generated draft before creating a PR. `devpilot message` writes a suggested message locally and does not publish it automatically.
