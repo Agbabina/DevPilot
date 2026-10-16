@@ -215,7 +215,7 @@ func devAI(reader *bufio.Reader, action string) {
 		if context == "" { context = ask(reader, "Paste error and relevant context: ") }
 		context = "Propose a minimal fix for this error. Explain the cause and show a patch; do not edit files automatically.\n" + context
 	}
-	var result struct { Result string ` + "`json:"result"`" + ` }
+	var result struct { Result string `json:"result"` }
 	apiAction := action
 	if action == "fix" { apiAction = "debug" }
 	if err := request("POST", "/ai/assist", map[string]string{"action": apiAction, "context": context}, &result); err != nil { fmt.Println("AI request failed:", err); return }
