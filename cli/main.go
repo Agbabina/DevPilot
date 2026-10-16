@@ -84,6 +84,9 @@ func main() {
 		return
 	}
 
+	// Retry local mutations whenever the CLI starts and connectivity is available.
+	if os.Args[1] != "sync" { syncOutbox() }
+
 	switch os.Args[1] {
 	case "init":
 		initProject()
@@ -122,6 +125,24 @@ func main() {
 
 	case "progress":
 		showProgress()
+
+	case "context":
+		handleContext(reader)
+
+	case "standup":
+		handleStandup()
+
+	case "focus":
+		handleFocus()
+
+	case "sync":
+		syncOutbox()
+
+	case "pr":
+		if len(os.Args) >= 3 && os.Args[2] == "draft" { handleMessageDraft() } else { fmt.Println("Usage: devpilot pr draft") }
+
+	case "message":
+		handleMessageDraft()
 
 	default:
 		fmt.Println("Unknown command:", os.Args[1])
@@ -465,6 +486,9 @@ func request(method, path string, body any, out any) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		if !syncingOutbox && (method == "POST" || method == "PATCH" || method == "PUT" || method == "DELETE") {
+			if queueErr := queueOfflineRequest(method, path, body); queueErr == nil { return nil } else { return fmt.Errorf("backend unavailable (%v); could not queue change: %w", err, queueErr) }
+		}
 		return fmt.Errorf("backend unavailable: %w", err)
 	}
 
@@ -504,6 +528,12 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot context switch <project-id>
+  devpilot standup
+  devpilot focus <mins> [--task <task-id>]
+  devpilot sync
+  devpilot pr draft
+  devpilot message
 
 Projects:
   devpilot project create
