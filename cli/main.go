@@ -148,34 +148,29 @@ func loadConfig() {
 		Token:  os.Getenv("DEVPILOT_TOKEN"),
 	}
 
-	data, err := os.ReadFile(configFile)
-	if err != nil {
-		return
-	}
-
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || !strings.Contains(line, "=") {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		switch key {
-		case "api_url":
-			if value != "" {
-				config.APIURL = value
+	if data, err := os.ReadFile(configFile); err == nil {
+		for _, line := range strings.Split(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || !strings.Contains(line, "=") {
+				continue
 			}
-		case "token":
-			if value != "" {
-				config.Token = value
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			switch key {
+			case "api_url":
+				if value != "" {
+					config.APIURL = value
+				}
+			case "token":
+				if value != "" {
+					config.Token = value
+				}
 			}
 		}
 	}
 
-	// Allow each developer to override the hosted backend without editing source.
+	// Environment variables intentionally take precedence over local config.
 	if override := strings.TrimSpace(os.Getenv("DEVPILOT_API_URL")); override != "" {
 		config.APIURL = strings.TrimRight(override, "/")
 	}
