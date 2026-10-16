@@ -575,6 +575,9 @@ AI:
 
 func initProject() {
 	config.APIURL = apiURL
+	if override := strings.TrimSpace(os.Getenv("DEVPILOT_API_URL")); override != "" {
+		config.APIURL = strings.TrimRight(override, "/")
+	}
 
 	if err := saveConfig(); err != nil {
 		fmt.Println("Error:", err)
