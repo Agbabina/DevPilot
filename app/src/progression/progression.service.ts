@@ -4,8 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { QueryFailedError } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 import { User } from "../auth/user.entity";
 import { XpLog } from "./xp-log.entity";
 import { RewardReason, XP_REWARDS } from "./rewards";
