@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
+import { runDevtools } from './devtools.mjs';
 
 const CONFIG = path.resolve(process.cwd(), '.devpilot');
 const DEFAULT_API = 'http://localhost:3000';
@@ -96,6 +97,36 @@ Projects:
   devpilot project create
   devpilot project delete <id>
 
+GitHub workflows:
+  devpilot pr draft
+  devpilot pr create
+  devpilot pr review
+  devpilot pr merge
+  devpilot pr checks
+  devpilot issue [title]
+  devpilot release <version>
+
+Productivity:
+  devpilot ship [commit message]
+  devpilot doctor
+  devpilot resume
+  devpilot daily
+  devpilot pulse
+  devpilot commit
+  devpilot coffee
+  devpilot matrix
+  devpilot motivate
+
+Code inspection:
+  devpilot inspect
+  devpilot explain <question-or-file>
+  devpilot impact <file>
+  devpilot security
+  devpilot deps
+  devpilot test
+  devpilot fix [error]
+  devpilot review --diff
+
 Environment:
   DEVPILOT_API_URL   Override API URL
   DEVPILOT_TOKEN     Override saved token`);
@@ -169,6 +200,7 @@ async function main(args) {
       return;
     }
   }
+  if (await runDevtools(args, { ask, request })) return;
   throw new Error(`Unknown command: ${[command, subcommand].filter(Boolean).join(' ')}\nRun "devpilot --help" for available commands.`);
 }
 main(process.argv.slice(2)).catch((error) => {

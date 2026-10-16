@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "cli:link": "npm link"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@nestjs/config": "^4.0.4",
@@ -48,12 +47,9 @@
     "typescript-eslint": "^8.62.0",
     "vite": "^8.1.1"
   },
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "description": "Terminal-first developer productivity toolkit with AI-assisted project inspection and Git workflows.",
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "bin": {
-    "devpilot": "./cli/index.mjs"
-  }
+  "license": "ISC"
 }

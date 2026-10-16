@@ -1,0 +1,54 @@
+name: Product feedback
+description: Share honest feedback about DevPilot's website or CLI.
+title: "[Feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for trying DevPilot. Honest, specific feedback is useful—even if something is confusing or not useful."
+  - type: dropdown
+    id: area
+    attributes:
+      label: What did you try?
+      options:
+        - Website / landing page
+        - CLI installation
+        - Project and task commands
+        - AI commands
+        - Code inspection and review
+        - GitHub pull-request workflows
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11, macOS, Ubuntu..."
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What happened?
+      description: What did you expect, what actually happened, and which command/page were you using?
+      placeholder: "I tried ... I expected ... but ..."
+    validations:
+      required: true
+  - type: textarea
+    id: improvements
+    attributes:
+      label: What should change?
+      description: Tell us what was confusing, missing, slow, or surprisingly useful.
+    validations:
+      required: true
+  - type: dropdown
+    id: recommend
+    attributes:
+      label: Would you recommend DevPilot to another developer right now?
+      options:
+        - "Yes"
+        - "Maybe, after improvements"
+        - "Not yet"
+    validations:
+      required: true

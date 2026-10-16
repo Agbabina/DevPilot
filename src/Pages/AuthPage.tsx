@@ -40,7 +40,7 @@ export default function AuthPage() {
       }
 
       await login(email, password);
-      navigate("/", { replace: true });
+      navigate("/app", { replace: true });
     } catch (error: any) {
       setError(
         error.response?.data?.message ?? "Authentication failed",

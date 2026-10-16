@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const apiURL = "http://localhost:3000"
+const apiURL = "https://devpilot-api-vsh2.onrender.com"
 const configFile = ".devpilot"
 
 type Config struct {
@@ -123,6 +123,12 @@ func main() {
 	case "progress":
 		showProgress()
 
+	case "ship", "doctor", "resume", "daily", "pulse", "commit", "coffee", "matrix", "motivate":
+		handlePremiumCommand(reader, os.Args[1])
+
+	case "pr", "issue", "release", "inspect", "explain", "impact", "security", "deps", "test", "fix", "review":
+		handleDevtools(reader)
+
 	default:
 		fmt.Println("Unknown command:", os.Args[1])
 		usage()
@@ -142,31 +148,31 @@ func loadConfig() {
 		Token:  os.Getenv("DEVPILOT_TOKEN"),
 	}
 
-	data, err := os.ReadFile(configFile)
-	if err != nil {
-		return
+	if data, err := os.ReadFile(configFile); err == nil {
+		for _, line := range strings.Split(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || !strings.Contains(line, "=") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			switch key {
+			case "api_url":
+				if value != "" {
+					config.APIURL = value
+				}
+			case "token":
+				if value != "" {
+					config.Token = value
+				}
+			}
+		}
 	}
 
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || !strings.Contains(line, "=") {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		switch key {
-		case "api_url":
-			if value != "" {
-				config.APIURL = value
-			}
-		case "token":
-			if value != "" {
-				config.Token = value
-			}
-		}
+	// Environment variables intentionally take precedence over local config.
+	if override := strings.TrimSpace(os.Getenv("DEVPILOT_API_URL")); override != "" {
+		config.APIURL = strings.TrimRight(override, "/")
 	}
 }
 
@@ -493,7 +499,7 @@ func request(method, path string, body any, out any) error {
 }
 
 func usage() {
-	fmt.Println(`
+	fmt.Print(`
 DevPilot CLI
 
 Usage:
@@ -504,6 +510,26 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot ship [commit message]
+  devpilot doctor
+  devpilot resume
+  devpilot daily
+  devpilot pulse
+  devpilot commit
+  devpilot pr draft|create|review|merge|checks
+  devpilot issue [title]
+  devpilot release <version>
+  devpilot inspect [map|todo|hotspots|checkpoint|onboard]
+  devpilot explain <file>
+  devpilot impact <file>
+  devpilot security
+  devpilot deps
+  devpilot test
+  devpilot fix [error]
+  devpilot review --diff
+  devpilot coffee
+  devpilot matrix
+  devpilot motivate
 
 Projects:
   devpilot project create
@@ -549,6 +575,9 @@ AI:
 
 func initProject() {
 	config.APIURL = apiURL
+	if override := strings.TrimSpace(os.Getenv("DEVPILOT_API_URL")); override != "" {
+		config.APIURL = strings.TrimRight(override, "/")
+	}
 
 	if err := saveConfig(); err != nil {
 		fmt.Println("Error:", err)

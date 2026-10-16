@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthPage from "./Pages/AuthPage";
 import Dashboard from "./Pages/Dashboard";
 import Projects from "./Pages/Projects";
@@ -13,6 +13,9 @@ import Settings from "./Pages/Settings";
 import Resources from "./Pages/Resources";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import SeoHead from "./Component/SeoHead";
+import LandingPage from "./Pages/LandingPage";
+import CliPage from "./Pages/CliPage";
+import DocsPage from "./Pages/DocsPage";
 
 function App() {
   useEffect(() => {
@@ -23,10 +26,13 @@ function App() {
     <BrowserRouter>
       <SeoHead />
       <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/cli" element={<CliPage />} />
+        <Route path="/docs" element={<DocsPage />} />
         <Route path="/auth" element={<AuthPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/app" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:projectId" element={<ProjectDetails />} />
           <Route
@@ -42,7 +48,7 @@ function App() {
           <Route path="/resources" element={<Resources />} />
         </Route>
 
-        <Route path="*" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
