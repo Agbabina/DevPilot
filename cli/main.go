@@ -507,6 +507,17 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot pr draft|create|review|merge|checks
+  devpilot issue [title]
+  devpilot release <version>
+  devpilot inspect
+  devpilot explain <file>
+  devpilot impact <file>
+  devpilot security
+  devpilot deps
+  devpilot test
+  devpilot fix [error]
+  devpilot review
 
 Projects:
   devpilot project create
