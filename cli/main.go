@@ -120,6 +120,9 @@ func main() {
 	case "next":
 		nextTask(reader)
 
+	case "sync":
+		syncOutbox()
+
 	case "ai":
 		handleAI(reader)
 
@@ -488,6 +491,12 @@ func request(method, path string, body any, out any) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		if !syncingOutbox && config.Token != "" && isQueueableMutation(method, path) {
+			if queueErr := queueOfflineRequest(method, path, body); queueErr != nil {
+				return fmt.Errorf("backend unavailable (%v); could not queue change: %w", err, queueErr)
+			}
+			return fmt.Errorf("backend unavailable; queued %s %s locally. Run devpilot sync when online", method, path)
+		}
 		return fmt.Errorf("backend unavailable: %w", err)
 	}
 
@@ -527,6 +536,7 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot sync
   devpilot ship [commit message]
   devpilot doctor
   devpilot resume

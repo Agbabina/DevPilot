@@ -10,6 +10,7 @@ export type User = {
   currentStreak: number;
   longestStreak: number;
   createdAt: string;
+  isAdmin: boolean;
 };
 
 type AuthResponse = {

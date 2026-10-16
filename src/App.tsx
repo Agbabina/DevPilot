@@ -16,6 +16,8 @@ import SeoHead from "./Component/SeoHead";
 import LandingPage from "./Pages/LandingPage";
 import CliPage from "./Pages/CliPage";
 import DocsPage from "./Pages/DocsPage";
+import AdminPage from "./Pages/AdminPage";
+import AnalyticsTracker from "./Component/AnalyticsTracker";
 
 function App() {
   useEffect(() => {
@@ -24,6 +26,7 @@ function App() {
   }, []);
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
       <SeoHead />
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -46,6 +49,7 @@ function App() {
           <Route path="/rewards" element={<Rewards />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
