@@ -119,33 +119,27 @@ func syncOutbox() {
 		return
 	}
 
-	fmt.Printf("Syncing %d queued change(s)...
-", len(queue))
+	fmt.Printf("Syncing %d queued change(s)...\n", len(queue))
 	syncingOutbox = true
 	defer func() { syncingOutbox = false }()
-	completed := 0
-	for completed < len(queue) {
-		item := queue[completed]
+	for len(queue) > 0 {
+		item := queue[0]
 		var body any
 		if len(item.Body) > 0 {
 			if err := json.Unmarshal(item.Body, &body); err != nil {
-				fmt.Printf("Stopped at queued change %d: invalid saved payload: %v
-", completed+1, err)
+				fmt.Printf("Stopped at queued change 1: invalid saved payload: %v\n", err)
 				break
 			}
 		}
 		if err := request(item.Method, item.Path, body, nil); err != nil {
-			fmt.Printf("Stopped at queued change %d (%s %s): %v
-", completed+1, item.Method, item.Path, err)
+			fmt.Printf("Stopped at queued change 1 (%s %s): %v\n", item.Method, item.Path, err)
 			break
 		}
-		completed++
-		if err := writeOutbox(file, queue[completed:]); err != nil {
+		queue = queue[1:]
+		if err := writeOutbox(file, queue); err != nil {
 			fmt.Println("Change synced, but could not update the local queue:", err)
 			return
 		}
-		queue = queue[completed:]
-		completed = 0
 	}
 	remaining, readErr := readOutbox(file)
 	if readErr != nil {
@@ -155,7 +149,6 @@ func syncOutbox() {
 	if len(remaining) == 0 {
 		fmt.Println("Sync complete. All queued changes were sent.")
 	} else {
-		fmt.Printf("Sync paused. %d change(s) remain queued; fix the reported issue and run devpilot sync again.
-", len(remaining))
+		fmt.Printf("Sync paused. %d change(s) remain queued; fix the reported issue and run devpilot sync again.\n", len(remaining))
 	}
 }
