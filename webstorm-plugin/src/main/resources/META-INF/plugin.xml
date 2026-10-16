@@ -1,0 +1,11 @@
+<idea-plugin>
+    <id>com.devpilot.webstorm</id>
+    <name>DevPilot</name>
+    <vendor url="https://dev-pilot-ashy.vercel.app">DevPilot</vendor>
+    <description><![CDATA[Task- and milestone-focused project execution inside WebStorm.]]></description>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>JavaScript</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="DevPilot" anchor="right" factoryClass="com.devpilot.ide.DevPilotToolWindowFactory" canCloseContents="false"/>
+    </extensions>
+</idea-plugin>
