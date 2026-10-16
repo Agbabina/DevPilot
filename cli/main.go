@@ -123,6 +123,19 @@ func main() {
 	case "progress":
 		showProgress()
 
+	case "git":
+		handleGit(reader)
+	case "terminal":
+		handleTerminal(reader)
+	case "run":
+		handleRun()
+	case "open":
+		handleOpen()
+	case "doctor":
+		handleDoctor()
+	case "github":
+		handleGitHub(reader)
+
 	default:
 		fmt.Println("Unknown command:", os.Args[1])
 		usage()
@@ -504,6 +517,20 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot terminal
+  devpilot run <program> [args...]
+  devpilot open <path-or-url>
+  devpilot doctor
+  devpilot github login|status|repo|prs
+
+Git (7 commands):
+  devpilot git status
+  devpilot git branch
+  devpilot git log
+  devpilot git diff
+  devpilot git fetch
+  devpilot git pull
+  devpilot git push
 
 Projects:
   devpilot project create
