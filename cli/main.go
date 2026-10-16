@@ -486,7 +486,7 @@ func request(method, path string, body any, out any) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		if !syncingOutbox && (method == "POST" || method == "PATCH" || method == "PUT" || method == "DELETE") {
+		if !syncingOutbox && !strings.HasPrefix(path, "/auth/") && !strings.HasPrefix(path, "/ai/") && (method == "POST" || method == "PATCH" || method == "PUT" || method == "DELETE") {
 			if queueErr := queueOfflineRequest(method, path, body); queueErr == nil { return nil } else { return fmt.Errorf("backend unavailable (%v); could not queue change: %w", err, queueErr) }
 		}
 		return fmt.Errorf("backend unavailable: %w", err)
