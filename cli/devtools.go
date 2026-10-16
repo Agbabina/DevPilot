@@ -131,7 +131,7 @@ func devScan(securityOnly bool) {
 		rules = []*regexp.Regexp{
 			regexp.MustCompile("-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"),
 			regexp.MustCompile("\\b(AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\\b"),
-			regexp.MustCompile("(?i)\\b(password|secret|api[_-]?key|access[_-]?token)\\s*[:=]\\s*['\\\"][^'\\\"]{8,}['\\\"]"),
+			regexp.MustCompile("(?i)(password|secret|api[_-]?key|access[_-]?token)\\s*[:=]\\s*[\\\"\'][^\\\"\']{8,}[\\\"\']"),
 			regexp.MustCompile("(?i)(rejectUnauthorized\\s*:\\s*false|InsecureSkipVerify\\s*:\\s*true)"),
 		}
 		labels = []string{"Private key material", "Token/key-shaped string", "Possible hard-coded credential", "TLS verification disabled"}
