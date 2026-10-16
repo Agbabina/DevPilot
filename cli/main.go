@@ -499,7 +499,7 @@ func request(method, path string, body any, out any) error {
 }
 
 func usage() {
-	fmt.Println(`
+	fmt.Print(`
 DevPilot CLI
 
 Usage:
