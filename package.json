@@ -53,7 +53,4 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bin": {
-    "devpilot": "./cli/index.mjs"
-  }
 }
