@@ -96,3 +96,12 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
+## Private admin analytics
+
+Set `ADMIN_EMAILS` in the backend deployment environment to a comma-separated allowlist of administrator account emails (for example, your own login email). Only allowlisted accounts can call `GET /analytics/admin/overview`; the backend checks the signed-in account on every request. Do not put this variable in the frontend or commit it to the repository. If `ADMIN_EMAILS` is unset, admin access is denied to everyone.
+
+The public `POST /analytics/visit` endpoint records page paths and a SHA-256 hash of a random browser-generated visitor ID. It does not store IP addresses, account emails, or names. Counts are approximate unique browsers, not verified human identities. Admin page views are excluded from the frontend tracker.
+
+The Go CLI defaults to the hosted API. Use `DEVPILOT_API_URL=http://127.0.0.1:3000` only when intentionally developing against your local backend.
