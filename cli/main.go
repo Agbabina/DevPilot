@@ -190,6 +190,12 @@ func loadConfig() {
 		}
 	}
 
+	// Migrate the old Node CLI's localhost default. Use DEVPILOT_API_URL for
+	// an intentional local-backend override.
+	if strings.TrimRight(config.APIURL, "/") == "http://localhost:3000" {
+		config.APIURL = apiURL
+	}
+
 	// Environment variables intentionally take precedence over local config.
 	if override := strings.TrimSpace(os.Getenv("DEVPILOT_API_URL")); override != "" {
 		config.APIURL = strings.TrimRight(override, "/")
