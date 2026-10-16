@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 $repo = "Agbabina/DevPilot"
-$asset = "https://github.com/$repo/releases/latest/download/devpilot-windows-amd64.exe"
+$asset = "https://github.com/$repo/releases/latest/download/devpilot.exe"
 $installDir = Join-Path $env:LOCALAPPDATA "DevPilot\bin"
 $binary = Join-Path $installDir "devpilot.exe"
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
