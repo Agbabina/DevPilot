@@ -106,15 +106,26 @@ GitHub workflows:
   devpilot issue [title]
   devpilot release <version>
 
+Productivity:
+  devpilot ship [commit message]
+  devpilot doctor
+  devpilot resume
+  devpilot daily
+  devpilot pulse
+  devpilot commit
+  devpilot coffee
+  devpilot matrix
+  devpilot motivate
+
 Code inspection:
   devpilot inspect
-  devpilot explain <file>
+  devpilot explain <question-or-file>
   devpilot impact <file>
   devpilot security
   devpilot deps
   devpilot test
   devpilot fix [error]
-  devpilot review
+  devpilot review --diff
 
 Environment:
   DEVPILOT_API_URL   Override API URL
