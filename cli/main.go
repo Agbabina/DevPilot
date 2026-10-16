@@ -519,7 +519,7 @@ Usage:
   devpilot pr draft|create|review|merge|checks
   devpilot issue [title]
   devpilot release <version>
-  devpilot inspect
+  devpilot inspect [map|todo|hotspots|checkpoint|onboard]
   devpilot explain <file>
   devpilot impact <file>
   devpilot security
