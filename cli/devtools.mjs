@@ -143,8 +143,13 @@ async function runDevtools(args, { ask, request }) {
       if (!a.trim() && !b.trim()) return console.log('No uncommitted tracked changes to review.');
       context = 'Review these changes for bugs, regressions, and security. Give actionable findings.\nUNSTAGED:\n' + a + '\nSTAGED:\n' + b;
     } else if (cmd === 'explain') {
-      if (!rest[0] || !exists(rest[0])) throw new Error('Usage: devpilot explain <existing-file>');
-      context = 'Explain this file, its flow, edge cases, and risks: ' + rest[0] + '\n\n' + read(rest[0]).slice(0, 18000);
+      if (!context) context = await ask('Question or file path: ');
+      if (!context) throw new Error('Usage: devpilot explain <question-or-file>');
+      if (exists(context) && fs.statSync(context).isFile()) {
+        context = 'Explain this file, its flow, edge cases, and risks: ' + context + '\n\n' + read(context).slice(0, 18000);
+      } else {
+        context = 'Explain this programming question clearly with a simple example: ' + context;
+      }
     } else context = 'Propose a minimal fix for this error; explain the cause and show the patch. Do not edit files automatically.\n' + (context || await ask('Paste error and relevant context: '));
     const result = await request('/ai/assist', { method: 'POST', body: JSON.stringify({ action: cmd === 'fix' ? 'debug' : cmd, context }) });
     console.log(result?.result || JSON.stringify(result, null, 2));
