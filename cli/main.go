@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const apiURL = "http://localhost:3000"
+const apiURL = "https://devpilot-api-vsh2.onrender.com"
 const configFile = ".devpilot"
 
 type Config struct {
@@ -173,6 +173,11 @@ func loadConfig() {
 				config.Token = value
 			}
 		}
+	}
+
+	// Allow each developer to override the hosted backend without editing source.
+	if override := strings.TrimSpace(os.Getenv("DEVPILOT_API_URL")); override != "" {
+		config.APIURL = strings.TrimRight(override, "/")
 	}
 }
 
