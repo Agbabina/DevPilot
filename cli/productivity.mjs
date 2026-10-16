@@ -54,6 +54,8 @@ async function ship(ask, message) {
   if (!await confirm(ask, 'Stage all non-ignored changes? Review the file list above first.')) { console.log('Ship cancelled.'); return true; }
   const staged = git('add', '-A');
   if (!show(staged)) throw new Error('Could not stage changes.');
+  const stagedWhitespace = git('diff', '--cached', '--check');
+  if (stagedWhitespace.code !== 0) { show(stagedWhitespace); throw new Error('Staged whitespace check failed. Nothing was committed or pushed.'); }
   const names = git('diff', '--cached', '--name-only');
   if (names.code !== 0) throw new Error('Could not inspect staged files.');
   for (const name of names.out.split(/\r?\n/).filter(Boolean)) {
