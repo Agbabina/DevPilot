@@ -36,7 +36,7 @@ type Project struct {
 	Description string `json:"description"`
 	Priority    string `json:"priority"`
 	XPReward    int    `json:"xpReward"`
-	Status      string `json:"status"`
+	Status      string `json:"status,omitempty"`
 }
 
 type Task struct {
@@ -59,10 +59,27 @@ type Milestone struct {
 	Tasks       []Task `json:"tasks"`
 }
 
+// AI plan response types intentionally omit persistence-only status fields.
+// The backend assigns valid default statuses when milestones and tasks are created.
+type AIPlanTask struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Priority    string `json:"priority"`
+	XPReward    int    `json:"xpReward"`
+}
+
+type AIPlanMilestone struct {
+	Title       string        `json:"title"`
+	Description string        `json:"description"`
+	Difficulty  string        `json:"difficulty"`
+	XPReward    int           `json:"xpReward"`
+	Tasks       []AIPlanTask  `json:"tasks"`
+}
+
 type AIPlan struct {
-	Description string      `json:"description"`
-	GithubURL   string      `json:"githubUrl"`
-	Milestones  []Milestone `json:"milestones"`
+	Description string            `json:"description"`
+	GithubURL   string            `json:"githubUrl"`
+	Milestones  []AIPlanMilestone `json:"milestones"`
 }
 
 type AuthResponse struct {
