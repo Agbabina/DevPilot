@@ -1,7 +1,6 @@
 name: Product feedback
 description: Share honest feedback about DevPilot's website or CLI.
 title: "[Feedback]: "
-labels: ["feedback"]
 body:
   - type: markdown
     attributes:
