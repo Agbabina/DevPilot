@@ -120,6 +120,9 @@ func main() {
 	case "next":
 		nextTask(reader)
 
+	case "sync":
+		syncOutbox()
+
 	case "ai":
 		handleAI(reader)
 
@@ -185,6 +188,12 @@ func loadConfig() {
 				}
 			}
 		}
+	}
+
+	// Migrate the old Node CLI's localhost default. Use DEVPILOT_API_URL for
+	// an intentional local-backend override.
+	if strings.TrimRight(config.APIURL, "/") == "http://localhost:3000" {
+		config.APIURL = apiURL
 	}
 
 	// Environment variables intentionally take precedence over local config.
@@ -488,6 +497,12 @@ func request(method, path string, body any, out any) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		if !syncingOutbox && config.Token != "" && isQueueableMutation(method, path) {
+			if queueErr := queueOfflineRequest(method, path, body); queueErr != nil {
+				return fmt.Errorf("backend unavailable (%v); could not queue change: %w", err, queueErr)
+			}
+			return fmt.Errorf("backend unavailable; queued %s %s locally. Run devpilot sync when online", method, path)
+		}
 		return fmt.Errorf("backend unavailable: %w", err)
 	}
 
@@ -527,6 +542,7 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot next
+  devpilot sync
   devpilot ship [commit message]
   devpilot doctor
   devpilot resume

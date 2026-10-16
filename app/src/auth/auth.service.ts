@@ -15,12 +15,14 @@ import { Repository } from 'typeorm';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { User } from './user.entity';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 const scrypt = promisify(scryptCallback);
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
   async register({ username, email, password }: RegisterDto) {
     email = email.trim().toLowerCase();
@@ -66,6 +68,14 @@ export class AuthService {
     return this.users.findOne({ where: { id } });
   }
 
+  private isAdminUser(userId: number) {
+    const allowedIds = (this.configService.get<string>('ADMIN_USER_IDS') ?? '')
+      .split(',')
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isInteger(value) && value > 0);
+    return allowedIds.includes(userId);
+  }
+
   public publicUser(user: User | null) {
     if (!user) {
       throw new NotFoundException('User not found');
@@ -81,6 +91,7 @@ export class AuthService {
       currentStreak: user.currentStreak,
       longestStreak: user.longestStreak,
       createdAt: user.createdAt,
+      isAdmin: this.isAdminUser(user.id),
     };
   }
 }
