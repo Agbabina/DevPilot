@@ -1,0 +1,33 @@
+name: Validate DevPilot
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feature/devpilot-git-inspection
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run build
+
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.mod
+      - run: go test ./...
+        working-directory: cli
+      - run: go build -o devpilot .
+        working-directory: cli
