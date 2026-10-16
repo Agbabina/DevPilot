@@ -97,6 +97,25 @@ Projects:
   devpilot project create
   devpilot project delete <id>
 
+GitHub workflows:
+  devpilot pr draft
+  devpilot pr create
+  devpilot pr review
+  devpilot pr merge
+  devpilot pr checks
+  devpilot issue [title]
+  devpilot release <version>
+
+Code inspection:
+  devpilot inspect
+  devpilot explain <file>
+  devpilot impact <file>
+  devpilot security
+  devpilot deps
+  devpilot test
+  devpilot fix [error]
+  devpilot review
+
 Environment:
   DEVPILOT_API_URL   Override API URL
   DEVPILOT_TOKEN     Override saved token`);
