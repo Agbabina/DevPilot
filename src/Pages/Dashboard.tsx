@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Calendar, Clipboard, CheckCircle, Bot, Bolt, Coins, ArrowRight, Sparkles, Moon, Sun } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Calendar, Clipboard, CheckCircle, Bot, Bolt, Coins, ArrowRight, Sparkles, Moon, Sun, ShieldCheck } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import Sidebar from "../Component/Sidebar";
 import Card from "../Component/Card";
 import Header from "../Component/Header";
@@ -40,7 +40,7 @@ export default function Dashboard() {
       <div className="relative z-10 flex flex-col lg:flex-row">
         <Sidebar />
         <main className="min-w-0 flex-1 px-5 py-6 md:px-10 md:py-8">
-          <div className="mb-4 flex justify-end"><button onClick={toggleDarkMode} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm hover:border-cyan-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" aria-label="Toggle dark mode">{darkMode ? <Sun size={16} /> : <Moon size={16} />} {darkMode ? "Light mode" : "Dark mode"}</button></div>
+          <div className="mb-4 flex justify-between gap-3"><div>{user?.isAdmin && <Link to="/admin" className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-bold text-cyan-800 shadow-sm hover:border-cyan-400 dark:border-cyan-400/30 dark:bg-slate-900 dark:text-cyan-200"><ShieldCheck size={16}/> Admin dashboard</Link>}</div><button onClick={toggleDarkMode} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm hover:border-cyan-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" aria-label="Toggle dark mode">{darkMode ? <Sun size={16} /> : <Moon size={16} />} {darkMode ? "Light mode" : "Dark mode"}</button></div>
           <section className="relative isolate overflow-hidden dev-scanline rounded-[2rem] border border-slate-200/80 bg-white/90 p-7 text-slate-900 shadow-[0_20px_50px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-cyan-400/20 dark:bg-slate-900/80 dark:text-slate-100 dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] shadow-[0_20px_50px_rgba(15,23,42,0.18)] md:p-10">
             <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
             <div className="absolute inset-y-0 right-0 hidden w-[47%] bg-gradient-to-l from-cyan-400/10 via-cyan-400/[0.03] to-transparent md:block" />
