@@ -18,7 +18,8 @@ const configFile = ".devpilot"
 
 type Config struct {
 	APIURL string
-	Token  string
+	Token string
+	ActiveProjectID int
 }
 
 var config Config
@@ -102,6 +103,17 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "p":
+		os.Args[1] = "project"
+		handleProject(reader)
+	case "m":
+		os.Args[1] = "milestone"
+		handleMilestone(reader)
+	case "t":
+		os.Args[1] = "task"
+		handleTask(reader)
+	case "plan":
+		generatePlan(reader)
 	case "init":
 		initProject()
 
@@ -179,13 +191,11 @@ func loadConfig() {
 			value := strings.TrimSpace(parts[1])
 			switch key {
 			case "api_url":
-				if value != "" {
-					config.APIURL = value
-				}
+				if value != "" { config.APIURL = value }
 			case "token":
-				if value != "" {
-					config.Token = value
-				}
+				if value != "" { config.Token = value }
+			case "active_project_id":
+				if parsed, err := strconv.Atoi(value); err == nil && parsed > 0 { config.ActiveProjectID = parsed }
 			}
 		}
 	}
@@ -203,7 +213,7 @@ func loadConfig() {
 }
 
 func saveConfig() error {
-	contents := fmt.Sprintf("api_url=%s\ntoken=%s\n", config.APIURL, config.Token)
+	contents := fmt.Sprintf("api_url=%s\ntoken=%s\nactive_project_id=%d\n", config.APIURL, config.Token, config.ActiveProjectID)
 	return os.WriteFile(configFile, []byte(contents), 0600)
 }
 
@@ -369,6 +379,9 @@ func handleProject(reader *bufio.Reader) {
 	switch os.Args[2] {
 	case "create":
 		createProject(reader)
+
+	case "use":
+		useProject(reader)
 
 	case "list":
 		listProjects()
@@ -536,6 +549,11 @@ DevPilot CLI
 
 Usage:
 
+  devpilot p ...             Shortcut for project commands
+  devpilot m ...             Shortcut for milestone commands
+  devpilot t ...             Shortcut for task commands
+  devpilot plan              Shortcut for AI project planning
+  devpilot p use [ID|name]   Remember the active project
   devpilot init
   devpilot login
   devpilot logout
@@ -565,6 +583,7 @@ Usage:
   devpilot motivate
 
 Projects:
+  devpilot project use [ID|name]
   devpilot project create
   devpilot project list
   devpilot project show
@@ -645,6 +664,38 @@ func status() {
 			project.XPReward,
 		)
 	}
+}
+
+func useProject(reader *bufio.Reader) {
+	var projects []Project
+	if err := request("GET", "/projects", nil, &projects); err != nil { fmt.Println("Error:", err); return }
+	if len(projects) == 0 { fmt.Println("No projects found."); return }
+	selectProject := func(value string) bool {
+		for _, project := range projects {
+			if strconv.Itoa(project.ID) == value || strings.EqualFold(project.Name, value) {
+				config.ActiveProjectID = project.ID
+				if err := saveConfig(); err != nil { fmt.Println("Error saving active project:", err); return true }
+				fmt.Printf("Active project: #%d %s\n", project.ID, project.Name)
+				return true
+			}
+		}
+		return false
+	}
+	if len(os.Args) >= 4 {
+		if selectProject(strings.TrimSpace(strings.Join(os.Args[3:], " "))) { return }
+		fmt.Println("Project not found. Run devpilot p list.")
+		return
+	}
+	for _, project := range projects { fmt.Printf("#%d %s\n", project.ID, project.Name) }
+	selected := id(reader, "Choose project ID: ")
+	if !selectProject(strconv.Itoa(selected)) { fmt.Println("Project not found.") }
+}
+
+func activeProjectID(reader *bufio.Reader) int {
+	if config.ActiveProjectID > 0 { return config.ActiveProjectID }
+	fmt.Println("No active project selected; choose one now.")
+	useProject(reader)
+	return config.ActiveProjectID
 }
 
 func createProject(reader *bufio.Reader) {
@@ -773,7 +824,8 @@ func updateProjectStatus(reader *bufio.Reader, status string) {
 }
 
 func createMilestone(reader *bufio.Reader) {
-	projectID := id(reader, "Project ID: ")
+	projectID := activeProjectID(reader)
+	if projectID == 0 { return }
 
 	body := map[string]any{
 		"title":       ask(reader, "Milestone title: "),
@@ -907,14 +959,34 @@ func updateMilestoneStatus(reader *bufio.Reader, status string) {
 }
 
 func createTask(reader *bufio.Reader) {
-	milestoneID := id(reader, "Milestone ID: ")
-
+	milestoneID := 0
+	if len(os.Args) >= 4 {
+		if parsed, err := strconv.Atoi(os.Args[3]); err == nil && parsed > 0 { milestoneID = parsed }
+	}
+	if milestoneID == 0 {
+		projectID := activeProjectID(reader)
+		if projectID == 0 { return }
+		var milestones []Milestone
+		if err := request("GET", "/projects/"+strconv.Itoa(projectID)+"/milestones", nil, &milestones); err != nil { fmt.Println("Error loading milestones:", err); return }
+		for _, milestone := range milestones {
+			if milestone.Status == "TODO" || milestone.Status == "" { milestoneID = milestone.ID; break }
+		}
+		if milestoneID == 0 && len(milestones) > 0 { milestoneID = milestones[0].ID }
+		if milestoneID == 0 { fmt.Println("No milestones found. Create one with devpilot m create."); return }
+	}
+	title := ask(reader, "Task title: ")
+	if strings.TrimSpace(title) == "" { fmt.Println("Task title is required."); return }
+	description := ask(reader, "Description (optional): ")
+	priority := strings.ToUpper(ask(reader, "Priority [MEDIUM]: "))
+	if priority == "" { priority = "MEDIUM" }
+	var existing []Task
+	order := 1
+	if err := request("GET", "/milestones/"+strconv.Itoa(milestoneID)+"/tasks", nil, &existing); err == nil { order = len(existing)+1 }
 	body := map[string]any{
-		"title":       ask(reader, "Task title: "),
-		"description": ask(reader, "Description: "),
-		"priority":    strings.ToUpper(ask(reader, "Priority (LOW, MEDIUM, HIGH): ")),
-		"order":       id(reader, "Order: "),
-		"githubUrl":   ask(reader, "GitHub repository URL (optional): "),
+		"title": title,
+		"description": description,
+		"priority": priority,
+		"order": order,
 	}
 
 	var task Task
@@ -1107,7 +1179,8 @@ func deleteResource(reader *bufio.Reader, kind string) {
 }
 
 func nextTask(reader *bufio.Reader) {
-	projectID := id(reader, "Project ID: ")
+	projectID := activeProjectID(reader)
+	if projectID == 0 { return }
 
 	var milestones []Milestone
 
@@ -1122,7 +1195,12 @@ func nextTask(reader *bufio.Reader) {
 	}
 
 	for _, milestone := range milestones {
-		for _, task := range milestone.Tasks {
+		var tasks []Task
+		if err := request("GET", "/milestones/"+strconv.Itoa(milestone.ID)+"/tasks", nil, &tasks); err != nil {
+			fmt.Printf("Could not load tasks for milestone #%d: %v\n", milestone.ID, err)
+			return
+		}
+		for _, task := range tasks {
 			if task.Status == "TODO" {
 				fmt.Println()
 				fmt.Println("Next task:")
@@ -1131,6 +1209,7 @@ func nextTask(reader *bufio.Reader) {
 				fmt.Println("Milestone:", milestone.Title)
 				fmt.Println("Priority:", task.Priority)
 				fmt.Printf("XP Reward: %d\n", task.XPReward)
+				fmt.Printf("Start it with: devpilot t start %d\n", task.ID)
 				return
 			}
 		}
