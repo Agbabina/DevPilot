@@ -1,75 +1,75 @@
-# React + TypeScript + Vite
+# DevPilot
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**A terminal-first developer toolkit for understanding projects, organizing work, and shipping code with more confidence.**
 
-Currently, two official plugins are available:
+DevPilot combines project and task workflows with AI-assisted explanations, repository inspection, code review helpers, and GitHub pull-request routines.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Try it
 
-## React Compiler
+- **Product:** https://dev-pilot-ashy.vercel.app
+- **CLI installer:** https://dev-pilot-ashy.vercel.app/cli
+- **Command guide:** https://dev-pilot-ashy.vercel.app/docs
+- **Source and feedback:** https://github.com/Agbabina/DevPilot
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Install the CLI
 
-## Expanding the ESLint configuration
+Windows PowerShell:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```powershell
+irm https://raw.githubusercontent.com/Agbabina/DevPilot/feature/devpilot-git-inspection/scripts/install.ps1 | iex
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+macOS / Linux:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+curl -fsSL https://raw.githubusercontent.com/Agbabina/DevPilot/feature/devpilot-git-inspection/scripts/install.sh | bash
 ```
+
+The installer downloads the latest release binary when one is published. Until the first binary release is available, it falls back to building from source and requires Go 1.25.7 or newer. macOS/Linux source fallback also needs `curl` and `unzip`.
+
+Verify installation:
+
+```sh
+devpilot help
+devpilot doctor
+devpilot inspect map
+```
+
+### Configure your backend
+
+The CLI defaults to the hosted DevPilot API. To use a different backend, set `DEVPILOT_API_URL` before running the CLI. Sign in with `devpilot login`; your local `.devpilot` file contains the saved token, so do not commit it.
+
+### GitHub commands
+
+Pull-request and issue workflows use the GitHub CLI (`gh`). Install it separately and authenticate with `gh auth login` before running `devpilot pr create`, `devpilot pr checks`, `devpilot pr merge`, or `devpilot issue`.
+
+## Documentation
+
+The [command guide](https://dev-pilot-ashy.vercel.app/docs) explains what each CLI command does, when to use it, examples, and safety notes. It includes project, milestone, task, AI, inspection, code-quality, GitHub, and terminal-extra commands.
+
+## Safety notes
+
+- AI inspection displays its selected context and asks before sending bounded code excerpts to the backend. Review the list before consenting.
+- `devpilot ship` asks before staging, committing and pushing; still review the file list and never commit secrets.
+- Security scans and AI reviews are helpers, not a full security audit or proof of correctness.
+- Review destructive project/task commands and verify IDs before running them.
+
+## Development
+
+Frontend (React, TypeScript, Vite):
+
+```sh
+npm install
+npm run dev
+npm run build
+```
+
+CLI (Go):
+
+```sh
+cd cli
+go test ./...
+go build -o devpilot .
+```
+
+Tagged releases beginning with `v` trigger the CLI release workflow, which tests the Go CLI and publishes Windows, macOS and Linux binaries with SHA-256 checksums.
