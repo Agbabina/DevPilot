@@ -42,8 +42,8 @@ func handleDevtools(reader *bufio.Reader) {
 		case "draft":
 			log, _ := devGit("log", "-5", "--oneline")
 			status, _ := devGit("status", "--short")
-			fmt.Println("Suggested PR title:\nfeat: describe the change\n")
-			fmt.Println("## Summary\n- What changed and why\n\n## Testing\n- [ ] Tests/build passed\n\n## Risks\n- Note compatibility risks\n")
+			fmt.Print("Suggested PR title:\nfeat: describe the change\n")
+			fmt.Print("## Summary\n- What changed and why\n\n## Testing\n- [ ] Tests/build passed\n\n## Risks\n- Note compatibility risks\n")
 			fmt.Println("Recent commits:\n" + log + "\nWorking tree:\n" + status)
 		case "create":
 			title := strings.TrimSpace(strings.Join(os.Args[3:], " "))
