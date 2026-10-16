@@ -203,25 +203,19 @@ func devAI(reader *bufio.Reader, action string) {
 	context := strings.TrimSpace(strings.Join(os.Args[2:], " "))
 	if action == "explain" {
 		if len(os.Args) < 3 { fmt.Println("Usage: devpilot explain <file>"); return }
-		data, err := os.ReadFile(os.Args[2]); if err != nil { fmt.Println("File error:", err); return }
-		context = "Explain this file, its flow, edge cases, and risks: " + os.Args[2] + "
-
-" + string(data)
+		data, err := os.ReadFile(os.Args[2])
+		if err != nil { fmt.Println("File error:", err); return }
+		context = "Explain this file, its flow, edge cases, and risks: " + os.Args[2] + "\n\n" + string(data)
 	} else if action == "review" {
 		unstaged, _ := devGit("diff")
 		staged, _ := devGit("diff", "--cached")
 		if strings.TrimSpace(unstaged+staged) == "" { fmt.Println("No uncommitted tracked changes to review."); return }
-		context = "Review these changes for bugs, regressions, and security. Give actionable findings.
-UNSTAGED:
-" + unstaged + "
-STAGED:
-" + staged
+		context = "Review these changes for bugs, regressions, and security. Give actionable findings.\nUNSTAGED:\n" + unstaged + "\nSTAGED:\n" + staged
 	} else {
 		if context == "" { context = ask(reader, "Paste error and relevant context: ") }
-		context = "Propose a minimal fix for this error. Explain the cause and show a patch; do not edit files automatically.
-" + context
+		context = "Propose a minimal fix for this error. Explain the cause and show a patch; do not edit files automatically.\n" + context
 	}
-	var result struct { Result string `json:"result"` }
+	var result struct { Result string ` + "`json:"result"`" + ` }
 	apiAction := action
 	if action == "fix" { apiAction = "debug" }
 	if err := request("POST", "/ai/assist", map[string]string{"action": apiAction, "context": context}, &result); err != nil { fmt.Println("AI request failed:", err); return }
