@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var syncingOutbox bool
+
 type ProjectContext struct {
 	ProjectID int      `json:"projectId"`
 	ProjectName string `json:"projectName"`
@@ -251,6 +253,8 @@ func syncOutbox() {
 	var queue []QueuedRequest
 	if err := readJSON(file, &queue); err != nil || len(queue)==0 { return }
 	remaining := make([]QueuedRequest, 0)
+	syncingOutbox = true
+	defer func() { syncingOutbox = false }()
 	for i, item := range queue {
 		var body any
 		if len(item.Body)>0 { _ = json.Unmarshal(item.Body, &body) }
