@@ -6,7 +6,7 @@ import { stdin, stdout } from 'node:process';
 import { runDevtools } from './devtools.mjs';
 
 const CONFIG = path.resolve(process.cwd(), '.devpilot');
-const DEFAULT_API = 'http://localhost:3000';
+const DEFAULT_API = 'https://devpilot-api-vsh2.onrender.com';
 
 function readConfig() {
   const values = {};
