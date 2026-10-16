@@ -121,6 +121,10 @@ func premiumShip(reader *bufio.Reader) {
 		fmt.Println(out, err)
 		return
 	}
+	if out, err := premiumGit("diff", "--cached", "--check"); err != nil {
+		fmt.Println("Staged whitespace check failed:", out)
+		return
+	}
 	names, err := premiumGit("diff", "--cached", "--name-only")
 	if err != nil {
 		fmt.Println("Could not inspect staged files:", err)
