@@ -24,7 +24,8 @@ function writeConfig(values) {
 }
 function apiBase() {
   const c = readConfig();
-  return (process.env.DEVPILOT_API_URL || c.api_url || DEFAULT_API).replace(/\/+$/, '');
+  const configured = c.api_url && c.api_url !== 'http://localhost:3000' ? c.api_url : DEFAULT_API;
+  return (process.env.DEVPILOT_API_URL || configured).replace(/\/+$/, '');
 }
 function token() {
   return process.env.DEVPILOT_TOKEN || readConfig().token || '';
@@ -137,7 +138,8 @@ async function main(args) {
 
   if (command === 'init') {
     const current = readConfig();
-    writeConfig({ api_url: current.api_url || DEFAULT_API, ...(current.token ? { token: current.token } : {}) });
+    const configured = current.api_url && current.api_url !== 'http://localhost:3000' ? current.api_url : DEFAULT_API;
+    writeConfig({ api_url: configured, ...(current.token ? { token: current.token } : {}) });
     console.log(`Initialized DevPilot in ${process.cwd()}\nAPI: ${apiBase()}`);
     return;
   }
