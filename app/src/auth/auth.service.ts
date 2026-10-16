@@ -81,6 +81,7 @@ export class AuthService {
       currentStreak: user.currentStreak,
       longestStreak: user.longestStreak,
       createdAt: user.createdAt,
+      isAdmin: (process.env.ADMIN_EMAILS || '').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean).includes(user.email.trim().toLowerCase()),
     };
   }
 }
