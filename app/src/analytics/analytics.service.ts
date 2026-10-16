@@ -41,7 +41,7 @@ export class AnalyticsService {
       this.users.count(),
       this.users.createQueryBuilder('user').where('user.createdAt >= :today', { today: this.sqliteDate(today) }).getCount(),
       this.visits.count(),
-      this.visits.createQueryBuilder('visit').where('visit.createdAt >= :today', { today: today.toISOString() }).getCount(),
+      this.visits.createQueryBuilder('visit').where('visit.createdAt >= :today', { today: this.sqliteDate(today) }).getCount(),
       this.uniqueVisitorsSince(),
       this.uniqueVisitorsSince(today),
       this.uniqueVisitorsSince(sevenDaysAgo),
