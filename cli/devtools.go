@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -107,7 +108,7 @@ func handleDevtools(reader *bufio.Reader) {
 		fmt.Print(out)
 		if err != nil { fmt.Println("Error:", err) }
 	case "inspect":
-		devScan(false)
+		devInspect(reader)
 	case "security":
 		devScan(true)
 	case "impact":
@@ -255,4 +256,340 @@ func devAI(reader *bufio.Reader, action string) {
 		return
 	}
 	fmt.Println(answer)
+}
+
+
+var inspectSkipDirs = map[string]bool{
+	".git": true, "node_modules": true, "vendor": true, "dist": true,
+	"build": true, "target": true, "coverage": true, ".gradle": true,
+	".idea": true, ".vscode": true, ".next": true, "out": true,
+}
+
+var inspectSourceExts = map[string]bool{
+	".java": true, ".kt": true, ".kts": true, ".go": true, ".js": true,
+	".jsx": true, ".ts": true, ".tsx": true, ".mjs": true, ".c": true,
+	".h": true, ".cpp": true, ".hpp": true, ".cs": true, ".py": true,
+	".rs": true, ".php": true, ".rb": true, ".swift": true, ".scala": true,
+}
+
+var inspectManifestFiles = []string{
+	"README.md", "package.json", "go.mod", "pom.xml", "build.gradle",
+	"build.gradle.kts", "settings.gradle", "settings.gradle.kts",
+	"pyproject.toml", "Cargo.toml", "composer.json",
+}
+
+func devInspect(reader *bufio.Reader) {
+	sub := ""
+	if len(os.Args) > 2 {
+		sub = os.Args[2]
+	}
+	switch sub {
+	case "map":
+		devProjectMap()
+		return
+	case "todo":
+		devTodoScan()
+		return
+	case "hotspots":
+		devHotspots()
+		return
+	case "checkpoint":
+		devCheckpoint()
+		return
+	case "onboard":
+		devAIInspect(reader, true)
+		return
+	case "help", "--help", "-h":
+		fmt.Println("Usage: devpilot inspect [map|todo|hotspots|checkpoint|onboard]")
+		fmt.Println("  inspect             Project inventory + AI architecture/risk review")
+		fmt.Println("  inspect map         Shallow project structure and manifests")
+		fmt.Println("  inspect todo        Find TODO/FIXME/HACK/XXX markers")
+		fmt.Println("  inspect hotspots    Files changed most often in recent Git history")
+		fmt.Println("  inspect checkpoint  Working-tree and recent-work summary")
+		fmt.Println("  inspect onboard     AI-generated onboarding guide for this codebase")
+		return
+	default:
+		devScan(false)
+		devProjectMap()
+		devAIInspect(reader, false)
+	}
+}
+
+func inspectWalk(root string, visit func(string, os.FileInfo)) {
+	_ = filepath.Walk(root, func(file string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			if file != root && inspectSkipDirs[info.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		visit(file, info)
+		return nil
+	})
+}
+
+func devProjectMap() {
+	root, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Could not determine project directory:", err)
+		return
+	}
+	fmt.Println("PROJECT MAP")
+	fmt.Println("-----------")
+	fmt.Println("Root:", root)
+	manifestFound := false
+	for _, name := range inspectManifestFiles {
+		if info, err := os.Stat(name); err == nil && !info.IsDir() {
+			fmt.Printf("[manifest] %s (%d bytes)\n", name, info.Size())
+			manifestFound = true
+		}
+	}
+	if !manifestFound {
+		fmt.Println("No common root manifest found.")
+	}
+	dirs := map[string]bool{}
+	counts := map[string]int{}
+	total := 0
+	inspectWalk(".", func(file string, info os.FileInfo) {
+		rel, err := filepath.Rel(".", file)
+		if err != nil {
+			return
+		}
+		ext := strings.ToLower(filepath.Ext(file))
+		if inspectSourceExts[ext] {
+			total++
+			counts[ext]++
+		}
+		dir := filepath.Dir(rel)
+		for dir != "." && dir != string(filepath.Separator) {
+			depth := strings.Count(filepath.ToSlash(dir), "/") + 1
+			if depth <= 3 {
+				dirs[filepath.ToSlash(dir)] = true
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	})
+	dirList := make([]string, 0, len(dirs))
+	for dir := range dirs {
+		dirList = append(dirList, dir)
+	}
+	sort.Strings(dirList)
+	fmt.Println("\nDirectories (up to 3 levels):")
+	if len(dirList) == 0 {
+		fmt.Println("  (no source directories detected)")
+	}
+	for _, dir := range dirList {
+		fmt.Println("  " + dir + "/")
+	}
+	exts := make([]string, 0, len(counts))
+	for ext := range counts {
+		exts = append(exts, ext)
+	}
+	sort.Strings(exts)
+	fmt.Printf("\nSource files: %d\n", total)
+	for _, ext := range exts {
+		fmt.Printf("  %-8s %d\n", ext, counts[ext])
+	}
+	fmt.Println("\nMap is a shallow inventory, not a complete dependency graph.")
+}
+
+func devTodoScan() {
+	fmt.Println("TODO SCAN")
+	fmt.Println("---------")
+	pattern := regexp.MustCompile(`(?i)\b(TODO|FIXME|HACK|XXX)\b`)
+	found, scanned := 0, 0
+	inspectWalk(".", func(file string, info os.FileInfo) {
+		if found >= 200 || info.Size() > 1_000_000 {
+			return
+		}
+		if !inspectSourceExts[strings.ToLower(filepath.Ext(file))] {
+			return
+		}
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return
+		}
+		scanned++
+		for lineNo, line := range strings.Split(string(data), "\n") {
+			if pattern.MatchString(line) {
+				fmt.Printf("%s:%d: %s\n", file, lineNo+1, strings.TrimSpace(line))
+				found++
+				if found >= 200 {
+					fmt.Println("Hit limit of 200 findings.")
+					return
+				}
+			}
+		}
+	})
+	fmt.Printf("\nScanned %d source files; found %d marker(s).\n", scanned, found)
+}
+
+func devHotspots() {
+	out, err := devGit("log", "-50", "--name-only", "--pretty=format:")
+	if err != nil {
+		fmt.Println("Git history unavailable:", err)
+		return
+	}
+	counts := map[string]int{}
+	for _, line := range strings.Split(out, "\n") {
+		file := strings.TrimSpace(line)
+		if file != "" {
+			counts[file]++
+		}
+	}
+	type item struct { file string; count int }
+	items := make([]item, 0, len(counts))
+	for file, count := range counts {
+		items = append(items, item{file, count})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].count == items[j].count {
+			return items[i].file < items[j].file
+		}
+		return items[i].count > items[j].count
+	})
+	fmt.Println("CHANGE HOTSPOTS")
+	fmt.Println("---------------")
+	if len(items) == 0 {
+		fmt.Println("No file history found yet.")
+		return
+	}
+	limit := len(items)
+	if limit > 15 { limit = 15 }
+	for i := 0; i < limit; i++ {
+		fmt.Printf("%2d. %-50s %d change(s) in last 50 commits\n", i+1, items[i].file, items[i].count)
+	}
+	fmt.Println("\nFrequently changed files deserve extra regression tests; frequency alone does not prove a bug.")
+}
+
+func devCheckpoint() {
+	fmt.Println("DEVELOPER CHECKPOINT")
+	fmt.Println("--------------------")
+	for _, entry := range []struct{ label string; args []string }{
+		{"Branch and working tree", []string{"status", "--short", "--branch"}},
+		{"Recent commits", []string{"log", "-5", "--oneline", "--decorate"}},
+		{"Unstaged diff summary", []string{"diff", "--stat"}},
+		{"Staged diff summary", []string{"diff", "--cached", "--stat"}},
+		{"Recent stashes", []string{"stash", "list", "-3"}},
+	} {
+		out, err := devGit(entry.args...)
+		fmt.Println("\n" + entry.label + ":")
+		if err != nil {
+			fmt.Println("  unavailable:", err)
+		} else if strings.TrimSpace(out) == "" {
+			fmt.Println("  (none)")
+		} else {
+			fmt.Print(out)
+			if !strings.HasSuffix(out, "\n") { fmt.Println() }
+		}
+	}
+}
+
+func devAIInspect(reader *bufio.Reader, onboarding bool) {
+	context, files := buildInspectContext()
+	if len(files) == 0 {
+		fmt.Println("No readable source files or supported manifests found. Run from the project root.")
+		return
+	}
+	fmt.Println("\nSelected context files (bounded to avoid sending the entire repository):")
+	for _, file := range files {
+		fmt.Println("  " + file)
+	}
+	fmt.Println("Only these excerpts and basic Git metadata will be sent to the configured DevPilot AI backend.")
+	if !devAskYes(reader, "Send the listed context to AI for analysis?") {
+		fmt.Println("AI inspection cancelled; no context sent.")
+		return
+	}
+	prompt := "Inspect this software project using only the supplied inventory, manifests, and source excerpts. " +
+		"Separate confirmed observations from hypotheses; do not invent files, frameworks, tests, or bugs. " +
+		"Prioritize architecture, entry points, important flows, reliability risks, security considerations, and the three highest-value next actions. " +
+		"Call out limitations caused by the partial context.\n\n" + context
+	action := "summarize"
+	if onboarding {
+		prompt = "Create a practical onboarding guide for a developer new to this repository. Explain the likely entry points, package/module boundaries, how to build and test based only on supplied evidence, a safe first task, and what remains unknown. Never invent commands or architecture.\n\n" + context
+	}
+	var result struct {
+		Result string `json:"result"`
+		Answer string `json:"answer"`
+	}
+	if err := request("POST", "/ai/assist", map[string]string{"action": action, "context": prompt}, &result); err != nil {
+		fmt.Println("AI inspection failed:", err)
+		return
+	}
+	answer := strings.TrimSpace(result.Result)
+	if answer == "" { answer = strings.TrimSpace(result.Answer) }
+	if answer == "" {
+		fmt.Println("AI returned an empty response. Check the backend logs and retry.")
+		return
+	}
+	fmt.Println("\nDEVPILOT INSPECTION")
+	fmt.Println("-------------------")
+	fmt.Println(answer)
+	fmt.Println("\nAI findings are suggestions, not verified diagnostics. Confirm them against source and tests.")
+}
+
+func buildInspectContext() (string, []string) {
+	var b strings.Builder
+	root, _ := os.Getwd()
+	b.WriteString("Project root: " + root + "\n")
+	if branch, err := devGit("branch", "--show-current"); err == nil {
+		b.WriteString("Git branch: " + strings.TrimSpace(branch) + "\n")
+	}
+	if status, err := devGit("status", "--short"); err == nil {
+		b.WriteString("Git status: " + strings.TrimSpace(status) + "\n")
+	}
+	var files []string
+	for _, name := range inspectManifestFiles {
+		if info, err := os.Stat(name); err == nil && !info.IsDir() && info.Size() <= 12000 {
+			files = append(files, name)
+		}
+	}
+	var sourceFiles []string
+	inspectWalk(".", func(file string, info os.FileInfo) {
+		if !inspectSourceExts[strings.ToLower(filepath.Ext(file))] || info.Size() > 20000 {
+			return
+		}
+		if strings.Contains(strings.ToLower(file), "secret") || strings.Contains(strings.ToLower(file), "credential") || strings.Contains(strings.ToLower(file), "private") {
+			return
+		}
+		sourceFiles = append(sourceFiles, file)
+	})
+	sort.Slice(sourceFiles, func(i, j int) bool {
+		score := func(name string) int {
+			base := strings.ToLower(filepath.Base(name))
+			if base == "main.java" || base == "main.go" || base == "main.ts" || base == "main.py" || base == "app.java" || base == "app.ts" { return 0 }
+			if strings.Contains(base, "application") || strings.Contains(base, "server") || strings.Contains(base, "index") { return 1 }
+			return 2
+		}
+		if score(sourceFiles[i]) != score(sourceFiles[j]) { return score(sourceFiles[i]) < score(sourceFiles[j]) }
+		return sourceFiles[i] < sourceFiles[j]
+	})
+	if len(sourceFiles) > 8 { sourceFiles = sourceFiles[:8] }
+	files = append(files, sourceFiles...)
+	seen := map[string]bool{}
+	selected := files[:0]
+	total := 0
+	for _, file := range files {
+		if seen[file] { continue }
+		seen[file] = true
+		data, err := os.ReadFile(file)
+		if err != nil { continue }
+		limit := len(data)
+		if limit > 6000 { limit = 6000 }
+		if total+limit > 30000 { break }
+		selected = append(selected, file)
+		total += limit
+		b.WriteString("\n--- " + file + " ---\n")
+		b.Write(data[:limit])
+		if limit < len(data) { b.WriteString("\n[excerpt truncated]\n") }
+		b.WriteString("\n")
+	}
+	return b.String(), selected
 }
