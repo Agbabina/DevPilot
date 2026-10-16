@@ -102,7 +102,15 @@ async function runDevtools(args, { ask, request }) {
     if (sub === 'checks') return show(gh('pr', 'checks'));
     if (sub === 'merge') {
       const view = gh('pr', 'view', '--json', 'number,title,state,mergeable,statusCheckRollup');
-      if (!show(view)) throw new Error('Could not inspect PR; ensure gh auth login is complete and a PR exists.');
+      if (view.code !== 0) { show(view); throw new Error('Could not inspect PR; ensure gh auth login is complete and a PR exists.'); }
+      let details;
+      try { details = JSON.parse(view.out); } catch { throw new Error('GitHub CLI returned unreadable PR status.'); }
+      console.log('PR #' + details.number + ': ' + details.title + '\\nState: ' + details.state + '\\nMergeability: ' + details.mergeable);
+      const checks = details.statusCheckRollup || [];
+      const failed = checks.filter(c => ['FAILURE', 'ERROR', 'CANCELLED', 'TIMED_OUT'].includes(c.conclusion || c.state));
+      if (details.state !== 'OPEN') throw new Error('Only an open PR can be merged.');
+      if (details.mergeable === false || details.mergeable === 'CONFLICTING') throw new Error('PR has merge conflicts. Resolve them before merging.');
+      if (failed.length) throw new Error('PR has failing checks. Fix them before merging.');
       if (!await askConfirm(ask, 'Merge the current PR using squash?')) return console.log('Merge cancelled.');
       return show(gh('pr', 'merge', '--squash', '--delete-branch'));
     }
