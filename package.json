@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "cli:link": "npm link"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@nestjs/config": "^4.0.4",
@@ -52,5 +51,5 @@
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "ISC"
 }
