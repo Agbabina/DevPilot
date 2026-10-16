@@ -199,7 +199,9 @@ func handleFocus() {
 	var active struct { ProjectID int `json:"projectId"` }
 	if readJSON(filepath.Join(stateDir(), "active-context.json"), &active) == nil { projectID = active.ProjectID }
 	start := time.Now()
-	fmt.Printf("Focus started for %d minutes. Task: %s. Press Ctrl+C to end early.\n", minutes, cleanOr(strconv.Itoa(taskID), "none"))
+	taskLabel := "none"
+	if taskID > 0 { taskLabel = strconv.Itoa(taskID) }
+	fmt.Printf("Focus started for %d minutes. Task: %s. Press Ctrl+C to end early.\n", minutes, taskLabel)
 	ticker := time.NewTicker(time.Minute); defer ticker.Stop()
 	deadline := start.Add(time.Duration(minutes)*time.Minute)
 	for time.Now().Before(deadline) {
