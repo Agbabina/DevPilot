@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { runProductivity } from './productivity.mjs';
 
 const run = (cmd, args) => {
   const r = spawnSync(cmd, args, { cwd: process.cwd(), encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 4 * 1024 * 1024 });
@@ -89,6 +90,7 @@ async function prDraft() {
 }
 async function runDevtools(args, { ask, request }) {
   const cmd = args[0], rest = args.slice(1);
+  if (await runProductivity(args, { ask })) return true;
   if (cmd === 'pr') {
     const sub = rest[0];
     if (sub === 'draft') return prDraft();
