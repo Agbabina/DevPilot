@@ -185,7 +185,7 @@ Rules:
    * General AI assistant.
    */
   async assist(data: any) {
-    return this.callAI(
+    const response = await this.callAI(
       `
 You are DevPilot, an AI coding assistant.
 
@@ -211,9 +211,34 @@ Rules:
 - Do not invent APIs or libraries.
 - Use the supplied workspace context when relevant. Prefer the user's actual project names, statuses, milestones, tasks, goals, and technologies over generic advice.
 - If the workspace context is empty or insufficient, say what is missing and provide useful general guidance.
+- Always put the complete user-facing response in the answer field.
       `.trim(),
       data,
     );
+
+    // The web app reads `answer`; the Go CLI reads `result`.
+    // Keep both keys so the shared endpoint works for both clients.
+    if (!response || typeof response !== 'object' || Array.isArray(response)) {
+      throw new ServiceUnavailableException('AI returned an invalid assistant response');
+    }
+
+    const parsed = response as Record<string, unknown>;
+    const answer =
+      typeof parsed.answer === 'string'
+        ? parsed.answer
+        : typeof parsed.result === 'string'
+          ? parsed.result
+          : '';
+
+    if (!answer.trim()) {
+      throw new ServiceUnavailableException('AI returned an empty assistant response');
+    }
+
+    return {
+      ...parsed,
+      answer,
+      result: answer,
+    };
   }
 
   /**
