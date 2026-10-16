@@ -123,6 +123,9 @@ func main() {
 	case "progress":
 		showProgress()
 
+	case "pr", "issue", "release", "inspect", "explain", "impact", "security", "deps", "test", "fix", "review":
+		handleDevtools(reader)
+
 	default:
 		fmt.Println("Unknown command:", os.Args[1])
 		usage()
