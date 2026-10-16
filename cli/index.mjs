@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
+import { runDevtools } from './devtools.mjs';
 
 const CONFIG = path.resolve(process.cwd(), '.devpilot');
 const DEFAULT_API = 'http://localhost:3000';
@@ -169,6 +170,7 @@ async function main(args) {
       return;
     }
   }
+  if (await runDevtools(args, { ask, request })) return;
   throw new Error(`Unknown command: ${[command, subcommand].filter(Boolean).join(' ')}\nRun "devpilot --help" for available commands.`);
 }
 main(process.argv.slice(2)).catch((error) => {
