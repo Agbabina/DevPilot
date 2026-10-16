@@ -269,3 +269,21 @@ func syncOutbox() {
 	if len(remaining)==0 { _ = os.Remove(file); fmt.Printf("Synced %d offline change(s).\n", len(queue)); return }
 	_ = writeJSON(file, remaining)
 }
+
+func handlePRCreate() {
+	handleMessageDraft()
+	root, err := gitRoot()
+	if err != nil { fmt.Println("Run this command inside a Git repository:", err); return }
+	bodyPath := filepath.Join(root, ".devpilot", "pr-draft.md")
+	messagePath := filepath.Join(root, ".devpilot", "message-draft.txt")
+	message, err := os.ReadFile(messagePath)
+	if err != nil { fmt.Println("Could not read generated PR title:", err); return }
+	if _, err := exec.LookPath("gh"); err != nil {
+		fmt.Println("GitHub CLI (gh) is required to open a PR. Drafts are saved locally; install gh and run gh auth login, then retry devpilot pr create.")
+		return
+	}
+	cmd := exec.Command("gh", "pr", "create", "--title", strings.TrimSpace(string(message)), "--body-file", bodyPath)
+	cmd.Dir = root
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil { fmt.Println("Could not create pull request:", err); return }
+}
