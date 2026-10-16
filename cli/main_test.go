@@ -34,3 +34,21 @@ func TestProjectIncludesExplicitStatus(t *testing.T) {
 		t.Fatalf("explicit project status should be preserved: %s", payload)
 	}
 }
+
+func TestOnlySupportedMutationsAreQueuedOffline(t *testing.T) {
+	if !shouldQueueOffline("POST", "/projects") {
+		t.Fatal("project creation should be queueable while offline")
+	}
+	if !shouldQueueOffline("PATCH", "/tasks/12") {
+		t.Fatal("task updates should be queueable while offline")
+	}
+	if shouldQueueOffline("POST", "/auth/login") {
+		t.Fatal("authentication requests must never be queued")
+	}
+	if shouldQueueOffline("POST", "/ai/plan") {
+		t.Fatal("AI requests must never be queued")
+	}
+	if shouldQueueOffline("GET", "/projects") {
+		t.Fatal("read-only requests must never be queued")
+	}
+}
