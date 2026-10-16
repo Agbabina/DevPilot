@@ -77,7 +77,7 @@ const rows: Entry[] = [
 ["Extras","devpilot matrix","Matrix effect","You want a little terminal fun.","Displays a small terminal Easter egg.","devpilot matrix"],
 ["Extras","devpilot motivate","Motivation boost","You need encouragement before the next task.","Prints a short motivational message.","devpilot motivate"],
 ].map(([category,command,title,when,details,example,caution])=>({category,command,title,when,details,example,caution}));
-const categories = ["All commands","Start here","Account","Project planning","Workflow","AI assistant","Code intelligence","Code quality","GitHub workflow","Extras"];
+const categories = ["All commands","Start here","Account","Project planning","Workflow","AI assistant","Code intelligence","Code quality","GitHub workflow","Resources","Extras"];
 export default function DocsPage() {
  const [query,setQuery]=useState(""); const [category,setCategory]=useState("All commands");
  const filtered=useMemo(()=>{const q=query.trim().toLowerCase();return rows.filter(x=>(category==="All commands"||x.category===category)&&(!q||[x.command,x.title,x.when,x.details,x.category].join(" ").toLowerCase().includes(q)));},[query,category]);
