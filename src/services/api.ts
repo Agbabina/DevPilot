@@ -1,19 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  /*baseURL: import.meta.env.DEV
-    ? "/api"
-    : (import.meta.env.VITE_API_URL ?? "https://devpilot-api-vsh2.onrender.com"),
-  headers: {
-    "Content-Type": "application/json",
-  },*/
   baseURL: import.meta.env.DEV
-    ? 'http://localhost:3000'
-    : (import.meta.env.VITE_API_URL ??
-      'https://devpilot-api-vsh2.onrender.com'),
-  headers: {
-    'Content-Type': 'application/json',
-  },
+    ? 'http://127.0.0.1:3000'
+    : (import.meta.env.VITE_API_URL ?? 'https://devpilot-api-vsh2.onrender.com'),
+  headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {

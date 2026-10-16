@@ -6,7 +6,7 @@ import { stdin, stdout } from 'node:process';
 import { runDevtools } from './devtools.mjs';
 
 const CONFIG = path.resolve(process.cwd(), '.devpilot');
-const DEFAULT_API = 'http://localhost:3000';
+const DEFAULT_API = 'https://devpilot-api-vsh2.onrender.com';
 
 function readConfig() {
   const values = {};
@@ -137,7 +137,8 @@ async function main(args) {
 
   if (command === 'init') {
     const current = readConfig();
-    writeConfig({ api_url: current.api_url || DEFAULT_API, ...(current.token ? { token: current.token } : {}) });
+    const savedApi = current.api_url && !['http://localhost:3000', 'http://127.0.0.1:3000'].includes(current.api_url.replace(/\/+$/, '')) ? current.api_url : DEFAULT_API;
+    writeConfig({ api_url: process.env.DEVPILOT_API_URL || savedApi, ...(current.token ? { token: current.token } : {}) });
     console.log(`Initialized DevPilot in ${process.cwd()}\nAPI: ${apiBase()}`);
     return;
   }

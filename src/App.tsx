@@ -16,6 +16,8 @@ import SeoHead from "./Component/SeoHead";
 import LandingPage from "./Pages/LandingPage";
 import CliPage from "./Pages/CliPage";
 import DocsPage from "./Pages/DocsPage";
+import AdminDashboard from "./Pages/AdminDashboard";
+import AnalyticsTracker from "./Component/AnalyticsTracker";
 
 function App() {
   useEffect(() => {
@@ -24,6 +26,7 @@ function App() {
   }, []);
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
       <SeoHead />
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -33,6 +36,7 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/app" element={<Dashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:projectId" element={<ProjectDetails />} />
           <Route

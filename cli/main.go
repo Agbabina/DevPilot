@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,14 @@ type Config struct {
 }
 
 var config Config
+var syncingOutbox bool
+
+type QueuedRequest struct {
+	Method string          `json:"method"`
+	Path string            `json:"path"`
+	Body json.RawMessage   `json:"body,omitempty"`
+	QueuedAt time.Time     `json:"queuedAt"`
+}
 
 type Resource struct {
 	ID      int      `json:"id"`
@@ -116,6 +125,9 @@ func main() {
 
 	case "status":
 		status()
+
+	case "sync":
+		syncOutbox()
 
 	case "next":
 		nextTask(reader)
@@ -463,14 +475,15 @@ func handleTask(reader *bufio.Reader) {
 }
 
 func request(method, path string, body any, out any) error {
+	var payload []byte
 	var reqBody io.Reader
 
 	if body != nil {
-		payload, err := json.Marshal(body)
+		encoded, err := json.Marshal(body)
 		if err != nil {
 			return err
 		}
-
+		payload = encoded
 		reqBody = bytes.NewReader(payload)
 	}
 
@@ -478,7 +491,6 @@ func request(method, path string, body any, out any) error {
 	if err != nil {
 		return err
 	}
-
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -488,31 +500,140 @@ func request(method, path string, body any, out any) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		if !syncingOutbox && shouldQueueOffline(method, path) {
+			if queueErr := enqueueRequest(method, path, payload); queueErr != nil {
+				return fmt.Errorf("backend unavailable (%v); could not queue request: %w", err, queueErr)
+			}
+			return fmt.Errorf("backend unavailable; change queued locally. Run `devpilot sync` when online")
+		}
 		return fmt.Errorf("backend unavailable: %w", err)
 	}
-
 	defer res.Body.Close()
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-
 	if res.StatusCode == http.StatusUnauthorized {
 		return fmt.Errorf("not authenticated — run `devpilot login`")
 	}
-
 	if res.StatusCode >= 300 {
 		return fmt.Errorf("API %s: %s", res.Status, string(data))
 	}
-
 	if out != nil && len(data) > 0 {
 		if err := json.Unmarshal(data, out); err != nil {
 			return fmt.Errorf("invalid API response: %w", err)
 		}
 	}
-
 	return nil
+}
+
+func shouldQueueOffline(method, route string) bool {
+	switch strings.ToUpper(method) {
+	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+	default:
+		return false
+	}
+	for _, prefix := range []string{"/projects", "/tasks", "/milestones", "/resources"} {
+		if strings.HasPrefix(route, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func outboxPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return filepath.Join(".", ".devpilot-outbox.json")
+	}
+	return filepath.Join(home, ".devpilot", "outbox.json")
+}
+
+func readOutbox() ([]QueuedRequest, error) {
+	data, err := os.ReadFile(outboxPath())
+	if os.IsNotExist(err) {
+		return []QueuedRequest{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var queue []QueuedRequest
+	if err := json.Unmarshal(data, &queue); err != nil {
+		return nil, fmt.Errorf("outbox is invalid JSON: %w", err)
+	}
+	return queue, nil
+}
+
+func writeOutbox(queue []QueuedRequest) error {
+	file := outboxPath()
+	if err := os.MkdirAll(filepath.Dir(file), 0700); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(queue, "", "  ")
+	if err != nil {
+		return err
+	}
+	temp := file + ".tmp"
+	if err := os.WriteFile(temp, data, 0600); err != nil {
+		return err
+	}
+	return os.Rename(temp, file)
+}
+
+func enqueueRequest(method, route string, payload []byte) error {
+	queue, err := readOutbox()
+	if err != nil {
+		return err
+	}
+	item := QueuedRequest{Method: strings.ToUpper(method), Path: route, QueuedAt: time.Now().UTC()}
+	if len(payload) > 0 {
+		item.Body = append(json.RawMessage(nil), payload...)
+	}
+	queue = append(queue, item)
+	return writeOutbox(queue)
+}
+
+func syncOutbox() {
+	if config.Token == "" {
+		fmt.Println("Not logged in. Run `devpilot login` before syncing.")
+		return
+	}
+	queue, err := readOutbox()
+	if err != nil {
+		fmt.Println("Could not read sync queue:", err)
+		return
+	}
+	if len(queue) == 0 {
+		fmt.Println("Sync queue is empty.")
+		return
+	}
+
+	fmt.Printf("Syncing %d queued change(s)...\\n", len(queue))
+	syncingOutbox = true
+	defer func() { syncingOutbox = false }()
+	synced := 0
+	for i, item := range queue {
+		var body any
+		if len(item.Body) > 0 {
+			body = json.RawMessage(item.Body)
+		}
+		if err := request(item.Method, item.Path, body, nil); err != nil {
+			if writeErr := writeOutbox(queue[i:]); writeErr != nil {
+				fmt.Println("Sync stopped:", err, "| could not save remaining queue:", writeErr)
+				return
+			}
+			fmt.Printf("Sync stopped at item %d/%d: %v\\n", i+1, len(queue), err)
+			fmt.Printf("%d change(s) synced; %d remain queued.\\n", synced, len(queue)-synced)
+			return
+		}
+		synced++
+	}
+	if err := writeOutbox([]QueuedRequest{}); err != nil {
+		fmt.Println("Synced all changes, but could not clear queue file:", err)
+		return
+	}
+	fmt.Printf("Sync complete: %d change(s) uploaded.\\n", synced)
 }
 
 func usage() {
@@ -526,6 +647,7 @@ Usage:
   devpilot logout
   devpilot whoami
   devpilot status
+  devpilot sync
   devpilot next
   devpilot ship [commit message]
   devpilot doctor
