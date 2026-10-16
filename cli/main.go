@@ -139,7 +139,7 @@ func main() {
 		syncOutbox()
 
 	case "pr":
-		if len(os.Args) >= 3 && os.Args[2] == "draft" { handleMessageDraft() } else { fmt.Println("Usage: devpilot pr draft") }
+		if len(os.Args) >= 3 && os.Args[2] == "draft" { handleMessageDraft() } else if len(os.Args) >= 3 && os.Args[2] == "create" { handlePRCreate() } else { fmt.Println("Usage: devpilot pr draft | create") }
 
 	case "message":
 		handleMessageDraft()
@@ -533,6 +533,7 @@ Usage:
   devpilot focus <mins> [--task <task-id>]
   devpilot sync
   devpilot pr draft
+  devpilot pr create
   devpilot message
 
 Projects:
