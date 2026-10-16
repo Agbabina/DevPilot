@@ -17,10 +17,14 @@ export class AnalyticsService {
     await this.visits.save(this.visits.create({ visitorHash, path: path.slice(0, 255) }));
   }
 
+  private sqliteDate(date: Date): string {
+    return date.toISOString().replace('T', ' ').replace('Z', '');
+  }
+
   private async uniqueVisitorsSince(since?: Date): Promise<number> {
     const query = this.visits.createQueryBuilder('visit')
       .select('COUNT(DISTINCT visit.visitorHash)', 'count');
-    if (since) query.where('visit.createdAt >= :since', { since: since.toISOString() });
+    if (since) query.where('visit.createdAt >= :since', { since: this.sqliteDate(since) });
     const result = await query.getRawOne<{ count: string | number }>();
     return Number(result?.count || 0);
   }
@@ -35,14 +39,14 @@ export class AnalyticsService {
 
     const [registeredUsers, newUsersToday, pageViews, pageViewsToday, uniqueVisitors, uniqueVisitorsToday, uniqueVisitors7d, recentUsers, recentVisits] = await Promise.all([
       this.users.count(),
-      this.users.createQueryBuilder('user').where('user.createdAt >= :today', { today: today.toISOString() }).getCount(),
+      this.users.createQueryBuilder('user').where('user.createdAt >= :today', { today: this.sqliteDate(today) }).getCount(),
       this.visits.count(),
       this.visits.createQueryBuilder('visit').where('visit.createdAt >= :today', { today: today.toISOString() }).getCount(),
       this.uniqueVisitorsSince(),
       this.uniqueVisitorsSince(today),
       this.uniqueVisitorsSince(sevenDaysAgo),
       this.users.find({ select: { id: true, username: true, email: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 10 }),
-      this.visits.createQueryBuilder('visit').where('visit.createdAt >= :since', { since: fourteenDaysAgo.toISOString() }).orderBy('visit.createdAt', 'ASC').getMany(),
+      this.visits.createQueryBuilder('visit').where('visit.createdAt >= :since', { since: this.sqliteDate(fourteenDaysAgo) }).orderBy('visit.createdAt', 'ASC').getMany(),
     ]);
 
     const dailyMap = new Map<string, { date: string; pageViews: number; visitors: Set<string> }>();
