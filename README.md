@@ -39,6 +39,32 @@ devpilot doctor
 devpilot inspect map
 ```
 
+### A better project → milestone → task workflow
+
+DevPilot remembers the project and milestone you're working in, so everyday commands no longer need a chain of IDs.
+
+```powershell
+devpilot init
+devpilot login
+devpilot project create
+# Give the project a name, then choose an AI plan, a quick manual plan, or plan later.
+devpilot use
+devpilot status
+devpilot next
+devpilot task finish
+```
+
+You can also create work inline:
+
+```powershell
+devpilot project create "Portfolio rebuild" --desc "Ship my developer portfolio" --priority high --manual
+devpilot milestone create "Portfolio foundation"
+devpilot task create "Build responsive homepage" --priority high
+devpilot task create "Add project cards" -p medium
+```
+
+When entering a manual plan, add multiple milestones and tasks one line at a time; submit a blank line to finish the current list. Use `devpilot use` to change the active project or milestone. The `.devpilot` file stores this context alongside the API URL and login token, so keep it out of Git.
+
 ### Configure your backend
 
 The CLI defaults to the hosted DevPilot API. To use a different backend, set `DEVPILOT_API_URL` before running the CLI. Sign in with `devpilot login`; your local `.devpilot` file contains the saved token, so do not commit it.
