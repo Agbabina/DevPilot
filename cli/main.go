@@ -145,6 +145,9 @@ func main() {
 	case "use":
 		wfUse(reader, os.Args[2:])
 
+	case "focus", "standup", "wip", "checkpoint", "todo", "map", "note", "notes", "count", "recent":
+		handleProductivity(reader, os.Args[1], os.Args[2:])
+
 	case "help", "--help", "-h":
 		usage()
 	case "resource":
@@ -556,6 +559,16 @@ Usage:
   devpilot whoami
   devpilot status
   devpilot use [project] [milestone]
+  devpilot focus [minutes]      Start a focused work session (default 25)
+  devpilot standup              Summarize recent commits and working tree
+  devpilot wip                  Show changed files and diff summary
+  devpilot checkpoint [note]    Save a resume checkpoint to Markdown
+  devpilot todo                 Find TODO/FIXME/HACK/BUG markers
+  devpilot map                  Print a compact project tree
+  devpilot note <text>          Save a timestamped project note
+  devpilot notes                Read saved project notes
+  devpilot count                Count source files and lines
+  devpilot recent               Show the last 10 commits
   devpilot next
   devpilot sync
   devpilot ship [commit message]
