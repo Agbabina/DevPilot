@@ -17,8 +17,10 @@ const apiURL = "https://devpilot-api-vsh2.onrender.com"
 const configFile = ".devpilot"
 
 type Config struct {
-	APIURL string
-	Token  string
+	APIURL      string
+	Token       string
+	ProjectID   int
+	MilestoneID int
 }
 
 var config Config
@@ -37,6 +39,7 @@ type Project struct {
 	Priority    string `json:"priority"`
 	XPReward    int    `json:"xpReward"`
 	Status      string `json:"status,omitempty"`
+	GithubURL   string `json:"githubUrl,omitempty"`
 }
 
 type Task struct {
@@ -103,7 +106,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "init":
-		initProject()
+		wfInit(reader)
 
 	case "login":
 		login(reader)
@@ -115,25 +118,32 @@ func main() {
 		whoami()
 
 	case "status":
-		status()
+		wfStatus(reader, os.Args[2:])
 
 	case "next":
-		nextTask(reader)
+		wfNext(reader, os.Args[2:])
 
 	case "sync":
 		syncOutbox()
 
 	case "ai":
-		handleAI(reader)
+		if len(os.Args) > 2 && os.Args[2] == "plan" {
+			wfAIPlanCommand(reader, os.Args[3:])
+		} else {
+			handleAI(reader)
+		}
 
 	case "project":
-		handleProject(reader)
+		handleWorkflowProject(reader, os.Args[2:])
 
 	case "milestone":
-		handleMilestone(reader)
+		handleWorkflowMilestone(reader, os.Args[2:])
 
 	case "task":
-		handleTask(reader)
+		handleWorkflowTask(reader, os.Args[2:])
+
+	case "use":
+		wfUse(reader, os.Args[2:])
 
 	case "help", "--help", "-h":
 		usage()
@@ -186,6 +196,10 @@ func loadConfig() {
 				if value != "" {
 					config.Token = value
 				}
+			case "project_id":
+				config.ProjectID, _ = strconv.Atoi(value)
+			case "milestone_id":
+				config.MilestoneID, _ = strconv.Atoi(value)
 			}
 		}
 	}
@@ -203,7 +217,7 @@ func loadConfig() {
 }
 
 func saveConfig() error {
-	contents := fmt.Sprintf("api_url=%s\ntoken=%s\n", config.APIURL, config.Token)
+	contents := fmt.Sprintf("api_url=%s\ntoken=%s\nproject_id=%d\nmilestone_id=%d\n", config.APIURL, config.Token, config.ProjectID, config.MilestoneID)
 	return os.WriteFile(configFile, []byte(contents), 0600)
 }
 
@@ -541,6 +555,7 @@ Usage:
   devpilot logout
   devpilot whoami
   devpilot status
+  devpilot use [project] [milestone]
   devpilot next
   devpilot sync
   devpilot ship [commit message]
