@@ -120,6 +120,9 @@ func main() {
 	case "status":
 		wfStatus(reader, os.Args[2:])
 
+	case "dashboard", "home":
+		wfStatus(reader, os.Args[2:])
+
 	case "next":
 		wfNext(reader, os.Args[2:])
 
@@ -570,6 +573,8 @@ Usage:
   devpilot count                Count source files and lines
   devpilot recent               Show the last 10 commits
   devpilot next
+  devpilot dashboard             Live command center: tasks, progress, Git, next action
+  devpilot home                  Alias for dashboard
   devpilot sync
   devpilot ship [commit message]
   devpilot doctor
