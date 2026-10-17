@@ -1308,49 +1308,105 @@ func wfProjectStatus(reader *bufio.Reader, args []string, status string) {
 
 func wfDashboard(p Project, ms []Milestone) {
 	done, total := wfTotals(ms)
+	all := wfFlatTasks(ms)
+	var active, next *wfTaskRef
+	for i := range all {
+		if wfIsInProgress(all[i].Task) && active == nil {
+			active = &all[i]
+		}
+		if wfIsTodo(all[i].Task) && next == nil {
+			next = &all[i]
+		}
+	}
+
+	uiBanner()
+	uiBox("COMMAND CENTER", fmt.Sprintf("%s  #%d  %s  %s", uiTrim(p.Name, 28), p.ID, p.Status, uiPriorityTag(p.Priority)))
+	fmt.Printf("  MILESTONE PROGRESS  %s  %d/%d milestones\n", uiBar(wfCompletedMilestones(ms), len(ms), 20), wfCompletedMilestones(ms), len(ms))
+	fmt.Printf("  TASK PROGRESS       %s  %d/%d tasks\n", uiBar(done, total, 20), done, total)
+
 	fmt.Println()
-	uiBox(p.Name, fmt.Sprintf("#%d   %s   %s", p.ID, p.Status, p.Priority))
-	fmt.Printf("  Overall  %s  %d/%d tasks\n", uiBar(done, total, 26), done, total)
+	fmt.Println("  " + uiBold("CURRENT FOCUS"))
+	switch {
+	case active != nil:
+		fmt.Printf("  %s %s\n", uiYellow("▶"), uiBold(active.Task.Title))
+		fmt.Printf("    %s  ·  %s\n", uiDim(active.Milestone.Title), uiPriorityTag(active.Task.Priority))
+	case next != nil:
+		fmt.Printf("  %s Nothing in progress yet.\n", uiDim("○"))
+		fmt.Printf("    Suggested: %s\n", uiBold(next.Task.Title))
+		fmt.Printf("    %s\n", uiDim("Milestone: "+next.Milestone.Title))
+	default:
+		fmt.Printf("  %s No open tasks found.\n", uiGreen("✓"))
+	}
+
+	fmt.Println()
+	fmt.Println("  " + uiBold("MILESTONE ROADMAP"))
 	if len(ms) == 0 {
-		fmt.Println()
-		fmt.Println("  No milestones yet. Start with " + uiCyan("devpilot milestone create"))
-		return
+		fmt.Println("    No milestones yet. Start with " + uiCyan("devpilot milestone create"))
+	} else {
+		for i, m := range ms {
+			d, t := wfCount(m)
+			activeMark := ""
+			if m.ID == config.MilestoneID { activeMark = uiCyan("  ◀ active") }
+			fmt.Printf("  %s %d. %s%s\n", uiStatusMark(m.Status), i+1, uiTrim(m.Title, 34), activeMark)
+			fmt.Printf("      %s  %d/%d tasks\n", uiBar(d, t, 18), d, t)
+		}
 	}
-	inProgress := false
-	for i, m := range ms {
-		d, t := wfCount(m)
-		active := ""
-		if m.ID == config.MilestoneID {
-			active = uiCyan("   <- active")
-		}
-		fmt.Printf("\n  %s %d. %s%s\n", uiStatusMark(m.Status), i+1, uiBold(m.Title), active)
-		fmt.Printf("      %s  %d/%d\n", uiBar(d, t, 20), d, t)
-		if m.Status == "COMPLETED" {
-			continue
-		}
-		shown := 0
-		for _, task := range m.Tasks {
-			if shown >= 8 {
-				fmt.Printf("        %s\n", uiDim(fmt.Sprintf("... +%d more", len(m.Tasks)-shown)))
-				break
+
+	fmt.Println()
+	fmt.Println("  " + uiBold("GIT SNAPSHOT"))
+	branch, status, stat := wfGitSnapshot()
+	if branch == "" {
+		fmt.Println("    " + uiDim("Not inside a Git repository (or Git is unavailable)."))
+	} else {
+		fmt.Printf("    Branch   %s\n", uiCyan(branch))
+		if strings.TrimSpace(status) == "" {
+			fmt.Printf("    Working tree %s\n", uiGreen("clean"))
+		} else {
+			lines := strings.Split(strings.TrimSpace(status), "\n")
+			fmt.Printf("    Working tree %s (%d changed path(s))\n", uiYellow("dirty"), len(lines))
+			for i, line := range lines {
+				if i >= 4 { fmt.Printf("      %s\n", uiDim(fmt.Sprintf("... and %d more", len(lines)-i))); break }
+				fmt.Printf("      %s\n", uiDim(line))
 			}
-			xp := ""
-			if task.XPReward > 0 {
-				xp = uiDim(fmt.Sprintf("  +%d XP", task.XPReward))
-			}
-			fmt.Printf("        %s %s  %s%s\n", uiStatusMark(task.Status), uiTrim(task.Title, 40), uiPriorityTag(task.Priority), xp)
-			if wfIsInProgress(task) {
-				inProgress = true
-			}
-			shown++
 		}
+		if strings.TrimSpace(stat) != "" { fmt.Printf("    Diff     %s\n", uiDim(strings.TrimSpace(stat))) }
+	}
+
+	fmt.Println()
+	fmt.Println("  " + uiBold("ONE NEXT ACTION"))
+	switch {
+	case active != nil:
+		fmt.Println("    " + uiCyan("devpilot task finish") + "  — complete the task you're working on")
+	case next != nil:
+		fmt.Printf("    %s %q\n", uiCyan("devpilot task start"), next.Task.Title)
+	case len(ms) == 0:
+		fmt.Println("    " + uiCyan("devpilot milestone create") + "  — map out the first milestone")
+	default:
+		fmt.Println("    " + uiGreen("All tasks complete. Ship it!"))
+		fmt.Println("    " + uiCyan("devpilot project finish"))
 	}
 	fmt.Println()
-	if inProgress {
-		fmt.Println("  Next: " + uiCyan("devpilot task finish"))
-	} else {
-		fmt.Println("  Next: " + uiCyan("devpilot next"))
+	fmt.Println(uiDim("  Shortcuts: devpilot next  ·  devpilot task list  ·  devpilot wip"))
+}
+
+func wfCompletedMilestones(ms []Milestone) int {
+	n := 0
+	for _, m := range ms { if strings.EqualFold(m.Status, "COMPLETED") { n++ } }
+	return n
+}
+
+func wfGitSnapshot() (branch, status, stat string) {
+	if out, err := exec.Command("git", "branch", "--show-current").Output(); err == nil {
+		branch = strings.TrimSpace(string(out))
 	}
+	if branch == "" { return "", "", "" }
+	if out, err := exec.Command("git", "status", "--short").Output(); err == nil {
+		status = string(out)
+	}
+	if out, err := exec.Command("git", "diff", "--stat").Output(); err == nil {
+		stat = strings.TrimSpace(string(out))
+	}
+	return
 }
 
 func wfStatus(reader *bufio.Reader, args []string) {
