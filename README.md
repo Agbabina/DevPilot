@@ -65,6 +65,26 @@ devpilot task create "Add project cards" -p medium
 
 When entering a manual plan, add multiple milestones and tasks one line at a time; submit a blank line to finish the current list. Use `devpilot use` to change the active project or milestone. The `.devpilot` file stores this context alongside the API URL and login token, so keep it out of Git.
 
+### Productivity commands
+
+The CLI includes a small terminal-first toolbox with no extra Go dependencies. ANSI colors automatically turn off when `NO_COLOR` is set or `TERM=dumb`.
+
+```powershell
+devpilot focus                 # 25-minute focus session
+devpilot focus 45              # custom focus session
+devpilot standup               # recent commits + working tree
+devpilot wip                   # changed files + diff summary
+devpilot checkpoint "finish auth flow"
+devpilot todo                  # scan source for TODO/FIXME/HACK/BUG
+devpilot map                   # compact project tree (ignores dependencies)
+devpilot note "ask about API pagination"
+devpilot notes                 # read saved notes
+devpilot count                 # rough source file / line count
+devpilot recent                # last 10 commits
+```
+
+The checkpoint is written to `.devpilot-checkpoint.md`; notes are appended to `.devpilot-notes.md`. Both are local files, so review them before committing. The TODO scanner and project map skip common generated/dependency folders. `focus` runs in the foreground and can be stopped with Ctrl+C.
+
 ### Configure your backend
 
 The CLI defaults to the hosted DevPilot API. To use a different backend, set `DEVPILOT_API_URL` before running the CLI. Sign in with `devpilot login`; your local `.devpilot` file contains the saved token, so do not commit it.
