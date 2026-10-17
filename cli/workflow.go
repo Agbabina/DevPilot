@@ -1864,7 +1864,7 @@ func uiBar(done, total, width int) string {
 }
 func uiHeader(title string) {
 	fmt.Println()
-	fmt.Println(uiCyan("┌─ " + strings.ToUpper(title) + " " + strings.Repeat("─", max(0, 38-len(title))))
+	fmt.Println(uiCyan("┌─ " + strings.ToUpper(title) + " " + strings.Repeat("─", max(0, 38-len(title)))))
 }
 func uiBox(title string, lines ...string) {
 	fmt.Println()
