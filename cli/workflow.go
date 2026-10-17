@@ -1887,3 +1887,49 @@ func uiTaskDone(title string, xp int) { fmt.Printf("  %s %s  %s\n", uiGreen("✓
 func uiMilestoneDone(title string) { uiRocket("Milestone complete: " + title) }
 func uiProjectDone(title string) { uiRocket("Project complete: " + title) }
 func uiRocket(message string) { fmt.Println(); fmt.Println(uiGreen("🚀 " + message)) }
+
+
+// Workflow dispatchers replace the old ID-first CRUD prompts while keeping
+// the existing command names intact.
+func handleWorkflowProject(reader *bufio.Reader, args []string) {
+	if len(args) == 0 { wfStatus(reader, nil); return }
+	switch args[0] {
+	case "create": wfProjectCreate(reader, args[1:])
+	case "list": wfProjectList()
+	case "show": wfProjectShow(reader, args[1:])
+	case "update": wfProjectUpdate(reader, args[1:])
+	case "delete": wfDelete(reader, "project", args[1:])
+	case "start": wfProjectStatus(reader, args[1:], "IN_PROGRESS")
+	case "finish": wfProjectStatus(reader, args[1:], "COMPLETED")
+	case "milestones": wfMilestoneList(reader, args[1:])
+	default: fmt.Println("Unknown project command:", args[0]); usage()
+	}
+}
+func handleWorkflowMilestone(reader *bufio.Reader, args []string) {
+	if len(args) == 0 { wfMilestoneList(reader, nil); return }
+	switch args[0] {
+	case "create": wfMilestoneCreate(reader, args[1:])
+	case "list": wfMilestoneList(reader, args[1:])
+	case "show": wfMilestoneShow(reader, args[1:])
+	case "update": wfMilestoneUpdate(reader, args[1:])
+	case "delete": wfDelete(reader, "milestone", args[1:])
+	case "start": wfMilestoneStatus(reader, args[1:], "IN_PROGRESS")
+	case "finish": wfMilestoneStatus(reader, args[1:], "COMPLETED")
+	case "tasks": wfTaskList(reader, args[1:])
+	default: fmt.Println("Unknown milestone command:", args[0]); usage()
+	}
+}
+func handleWorkflowTask(reader *bufio.Reader, args []string) {
+	if len(args) == 0 { wfTaskList(reader, nil); return }
+	switch args[0] {
+	case "create": wfTaskCreate(reader, args[1:])
+	case "list": wfTaskList(reader, args[1:])
+	case "show": wfTaskShow(reader, args[1:])
+	case "update": wfTaskUpdate(reader, args[1:])
+	case "delete": wfDelete(reader, "task", args[1:])
+	case "start": wfTaskStart(reader, args[1:])
+	case "finish": wfTaskFinish(reader, args[1:])
+	case "next": wfNext(reader, args[1:])
+	default: fmt.Println("Unknown task command:", args[0]); usage()
+	}
+}
