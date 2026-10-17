@@ -448,7 +448,7 @@ func wfAfterProjectCreated(reader *bufio.Reader, p Project, a wfArgs) {
 			"AI plan     - generate milestones and tasks for me",
 			"By hand     - type milestones and tasks quickly",
 			"Later       - I'll plan it another time",
-		}, 0)
+		}, 1)
 	}
 	switch choice {
 	case 1:
