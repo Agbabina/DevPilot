@@ -18,7 +18,7 @@ else
   echo "No release binary yet; trying a source build."
   command -v go >/dev/null 2>&1 || { echo "Install Go 1.25.7+ from https://go.dev/dl/ or wait for a published release." >&2; exit 1; }
   command -v unzip >/dev/null 2>&1 || { echo "Source fallback requires unzip." >&2; exit 1; }
-  curl -fsSL "https://github.com/$REPO/archive/refs/heads/feature/devpilot-git-inspection.zip" -o "$TMP/source.zip"
+  curl -fsSL "https://github.com/$REPO/archive/refs/heads/main.zip" -o "$TMP/source.zip"
   mkdir "$TMP/source"
   unzip -q "$TMP/source.zip" -d "$TMP/source"
   MOD_FILE="$(find "$TMP/source" -path '*/cli/go.mod' -print -quit)"

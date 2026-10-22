@@ -13,7 +13,7 @@ if (-not $installed) {
   New-Item -ItemType Directory -Force -Path $temp | Out-Null
   try {
     $zip = Join-Path $temp "source.zip"
-    Invoke-WebRequest -Uri "https://github.com/$repo/archive/refs/heads/feature/devpilot-git-inspection.zip" -OutFile $zip
+    Invoke-WebRequest -Uri "https://github.com/$repo/archive/refs/heads/main.zip" -OutFile $zip
     Expand-Archive -Path $zip -DestinationPath $temp -Force
     $root = Get-ChildItem $temp -Directory | Where-Object { Test-Path (Join-Path $_.FullName "cli\go.mod") } | Select-Object -First 1
     if (-not $root) { throw "Could not find the CLI source folder." }
