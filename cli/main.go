@@ -117,6 +117,15 @@ func main() {
 	case "whoami":
 		whoami()
 
+	case "send":
+		sendMessage()
+
+	case "inbox":
+		showInbox()
+
+	case "message":
+		handleMessageCommand()
+
 	case "status":
 		wfStatus(reader, os.Args[2:])
 
