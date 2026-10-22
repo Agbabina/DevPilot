@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Like, Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { User } from '../auth/user.entity';
 import { Task } from '../tasks/tasks.entity';
 import { Message } from './message.entity';
