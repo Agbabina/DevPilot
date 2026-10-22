@@ -17,8 +17,10 @@ const apiURL = "https://devpilot-api-vsh2.onrender.com"
 const configFile = ".devpilot"
 
 type Config struct {
-	APIURL string
-	Token  string
+	APIURL      string
+	Token       string
+	ProjectID   int
+	MilestoneID int
 }
 
 var config Config
@@ -37,6 +39,7 @@ type Project struct {
 	Priority    string `json:"priority"`
 	XPReward    int    `json:"xpReward"`
 	Status      string `json:"status,omitempty"`
+	GithubURL   string `json:"githubUrl,omitempty"`
 }
 
 type Task struct {
@@ -103,7 +106,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "init":
-		initProject()
+		wfInit(reader)
 
 	case "login":
 		login(reader)
@@ -115,25 +118,38 @@ func main() {
 		whoami()
 
 	case "status":
-		status()
+		wfStatus(reader, os.Args[2:])
+
+	case "dashboard", "home":
+		wfStatus(reader, os.Args[2:])
 
 	case "next":
-		nextTask(reader)
+		wfNext(reader, os.Args[2:])
 
 	case "sync":
 		syncOutbox()
 
 	case "ai":
-		handleAI(reader)
+		if len(os.Args) > 2 && os.Args[2] == "plan" {
+			wfAIPlanCommand(reader, os.Args[3:])
+		} else {
+			handleAI(reader)
+		}
 
 	case "project":
-		handleProject(reader)
+		handleWorkflowProject(reader, os.Args[2:])
 
 	case "milestone":
-		handleMilestone(reader)
+		handleWorkflowMilestone(reader, os.Args[2:])
 
 	case "task":
-		handleTask(reader)
+		handleWorkflowTask(reader, os.Args[2:])
+
+	case "use":
+		wfUse(reader, os.Args[2:])
+
+	case "focus", "standup", "wip", "checkpoint", "todo", "map", "note", "notes", "count", "recent":
+		handleProductivity(reader, os.Args[1], os.Args[2:])
 
 	case "help", "--help", "-h":
 		usage()
@@ -186,6 +202,10 @@ func loadConfig() {
 				if value != "" {
 					config.Token = value
 				}
+			case "project_id":
+				config.ProjectID, _ = strconv.Atoi(value)
+			case "milestone_id":
+				config.MilestoneID, _ = strconv.Atoi(value)
 			}
 		}
 	}
@@ -203,7 +223,7 @@ func loadConfig() {
 }
 
 func saveConfig() error {
-	contents := fmt.Sprintf("api_url=%s\ntoken=%s\n", config.APIURL, config.Token)
+	contents := fmt.Sprintf("api_url=%s\ntoken=%s\nproject_id=%d\nmilestone_id=%d\n", config.APIURL, config.Token, config.ProjectID, config.MilestoneID)
 	return os.WriteFile(configFile, []byte(contents), 0600)
 }
 
@@ -541,7 +561,26 @@ Usage:
   devpilot logout
   devpilot whoami
   devpilot status
+  devpilot send @username "message text"
+  devpilot inbox [--unread]
+  devpilot message reply <id> "text"
+  devpilot message forward <id> @username
+  devpilot message attach <id> <task-id>
+  devpilot message search "query"
+  devpilot use [project] [milestone]
+  devpilot focus [minutes]      Start a focused work session (default 25)
+  devpilot standup              Summarize recent commits and working tree
+  devpilot wip                  Show changed files and diff summary
+  devpilot checkpoint [note]    Save a resume checkpoint to Markdown
+  devpilot todo                 Find TODO/FIXME/HACK/BUG markers
+  devpilot map                  Print a compact project tree
+  devpilot note <text>          Save a timestamped project note
+  devpilot notes                Read saved project notes
+  devpilot count                Count source files and lines
+  devpilot recent               Show the last 10 commits
   devpilot next
+  devpilot dashboard             Live command center: tasks, progress, Git, next action
+  devpilot home                  Alias for dashboard
   devpilot sync
   devpilot ship [commit message]
   devpilot doctor
@@ -1314,4 +1353,77 @@ func id(reader *bufio.Reader, label string) int {
 
 		fmt.Println("Please enter a valid ID.")
 	}
+}
+ 
+// Messaging commands use the authenticated API; private messages are visible only to participants.
+func sendMessage() {
+	if len(os.Args) < 4 {
+		fmt.Println("Usage: devpilot send @username \"message text\"")
+		return
+	}
+	var sent map[string]any
+	if err := request("POST", "/messages/send", map[string]string{"recipient": os.Args[2], "message": strings.Join(os.Args[3:], " ")}, &sent); err != nil { fmt.Println("Error:", err); return }
+	fmt.Printf("Message sent to @%v (message #%v).\n", nestedUsername(sent, "recipient"), sent["id"])
+}
+
+func showInbox() {
+	unread := len(os.Args) > 2 && os.Args[2] == "--unread"
+	path := "/messages/inbox"
+	if unread { path += "?unread=true" }
+	var messages []map[string]any
+	if err := request("GET", path, nil, &messages); err != nil { fmt.Println("Error:", err); return }
+	if len(messages) == 0 { if unread { fmt.Println("No unread messages.") } else { fmt.Println("Inbox is empty.") }; return }
+	for _, m := range messages {
+		sender, recipient := nestedUsername(m, "sender"), nestedUsername(m, "recipient")
+		marker := " "
+		if m["readAt"] == nil && recipient != "unknown" { marker = "*" }
+		fmt.Printf("%s #%v @%s → @%s  %s\n    %s\n", marker, m["id"], sender, recipient, m["createdAt"], m["body"])
+		if m["taskId"] != nil { fmt.Printf("    linked task: #%v\n", m["taskId"]) }
+	}
+}
+
+func handleMessageCommand() {
+	if len(os.Args) < 3 { fmt.Println("Usage: devpilot message reply|forward|attach|search ..."); return }
+	switch os.Args[2] {
+	case "reply":
+		if len(os.Args) < 5 { fmt.Println("Usage: devpilot message reply <id> \"text\""); return }
+		id, err := strconv.Atoi(os.Args[3]); if err != nil || id < 1 { fmt.Println("Message ID must be a positive number."); return }
+		var sent map[string]any
+		if err := request("POST", "/messages/"+strconv.Itoa(id)+"/reply", map[string]string{"message": strings.Join(os.Args[4:], " ")}, &sent); err != nil { fmt.Println("Error:", err); return }
+		fmt.Printf("Reply sent (message #%v).\n", sent["id"])
+	case "forward":
+		if len(os.Args) != 5 { fmt.Println("Usage: devpilot message forward <id> @username"); return }
+		id, err := strconv.Atoi(os.Args[3]); if err != nil || id < 1 { fmt.Println("Message ID must be a positive number."); return }
+		var sent map[string]any
+		if err := request("POST", "/messages/"+strconv.Itoa(id)+"/forward", map[string]string{"recipient": os.Args[4]}, &sent); err != nil { fmt.Println("Error:", err); return }
+		fmt.Printf("Forwarded as message #%v.\n", sent["id"])
+	case "attach":
+		if len(os.Args) != 5 { fmt.Println("Usage: devpilot message attach <message-id> <task-id>"); return }
+		id, e1 := strconv.Atoi(os.Args[3]); taskID, e2 := strconv.Atoi(os.Args[4])
+		if e1 != nil || e2 != nil || id < 1 || taskID < 1 { fmt.Println("Message and task IDs must be positive numbers."); return }
+		var updated map[string]any
+		if err := request("POST", "/messages/"+strconv.Itoa(id)+"/attach", map[string]int{"taskId": taskID}, &updated); err != nil { fmt.Println("Error:", err); return }
+		fmt.Printf("Message #%d linked to task #%d.\n", id, taskID)
+	case "search":
+		if len(os.Args) < 4 { fmt.Println("Usage: devpilot message search \"query\""); return }
+		var messages []map[string]any
+		if err := request("GET", "/messages/search?q="+urlQueryEscape(strings.Join(os.Args[3:], " ")), nil, &messages); err != nil { fmt.Println("Error:", err); return }
+		if len(messages) == 0 { fmt.Println("No matching messages."); return }
+		for _, m := range messages { fmt.Printf("#%v @%s: %s\n", m["id"], nestedUsername(m, "sender"), m["body"]) }
+	default:
+		fmt.Println("Unknown message command:", os.Args[2])
+	}
+}
+
+func nestedUsername(value map[string]any, key string) string {
+	nested, ok := value[key].(map[string]any)
+	if !ok { return "unknown" }
+	username, _ := nested["username"].(string)
+	if username == "" { return "unknown" }
+	return username
+}
+
+func urlQueryEscape(value string) string {
+	replacer := strings.NewReplacer("%", "%25", " ", "%20", "+", "%2B", "&", "%26", "?", "%3F", "#", "%23")
+	return replacer.Replace(value)
 }
