@@ -57,7 +57,7 @@ export class MessagesService {
       await this.messages.update(unread.map((m) => m.id), { readAt: now });
       unread.forEach((m) => { m.readAt = now; });
     }
-    return Promise.all(visible.map((m) => this.present(m)));
+    return Promise.all(visible.map(async (m) => ({ ...(await this.present(m)), unread: m.recipientId === userId && !m.readAt })));
   }
 
   async reply(userId: number, id: number, body: string) {
