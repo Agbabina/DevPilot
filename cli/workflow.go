@@ -78,7 +78,6 @@ func wfParseID(s string) (int, bool) {
 	n, err := strconv.Atoi(strings.TrimPrefix(strings.TrimSpace(s), "#"))
 	return n, err == nil && n > 0
 }
-
 func wfPriority(s, def string) string {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "":
