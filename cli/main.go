@@ -1376,7 +1376,7 @@ func showInbox() {
 	for _, m := range messages {
 		sender, recipient := nestedUsername(m, "sender"), nestedUsername(m, "recipient")
 		marker := " "
-		if m["readAt"] == nil && recipient != "unknown" { marker = "*" }
+		if m["unread"] == true { marker = "*" }
 		fmt.Printf("%s #%v @%s → @%s  %s\n    %s\n", marker, m["id"], sender, recipient, m["createdAt"], m["body"])
 		if m["taskId"] != nil { fmt.Printf("    linked task: #%v\n", m["taskId"]) }
 	}
