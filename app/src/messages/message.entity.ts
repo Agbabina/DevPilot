@@ -8,9 +8,9 @@ export class Message {
   @Column() senderId: number;
   @Column() recipientId: number;
   @Column({ type: 'text' }) body: string;
-  @Column({ nullable: true }) replyToId: number | null;
-  @Column({ nullable: true }) forwardedFromId: number | null;
-  @Column({ nullable: true }) taskId: number | null;
+  @Column({ type: 'integer', nullable: true }) replyToId: number | null;
+  @Column({ type: 'integer', nullable: true }) forwardedFromId: number | null;
+  @Column({ type: 'integer', nullable: true }) taskId: number | null;
   @Column({ type: 'datetime', nullable: true }) readAt: Date | null;
   @CreateDateColumn() createdAt: Date;
 }
