@@ -11,6 +11,7 @@ import { ProgressionModule } from './progression/progression.module';
 import { ResourcesModule } from './resources/resources.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { AdminModule } from './admin/admin.module';
     ProgressionModule,
     ResourcesModule,
     AnalyticsModule,
-    AdminModule
+    AdminModule,
+    MessagesModule
   ],
 })
 export class AppModule {}
