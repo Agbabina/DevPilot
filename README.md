@@ -1,5 +1,9 @@
 # DevPilot
 
+<p align="center"><img src="public/devpilot-mark.svg" width="112" alt="DevPilot logo" /></p>
+
+<p align="center"><strong>Less context switching. More shipped code.</strong><br/>Understand your repo. Organize the work. Ship with confidence.</p>
+
 **A terminal-first developer toolkit for understanding projects, organizing work, and shipping code with more confidence.**
 
 DevPilot combines project and task workflows with AI-assisted explanations, repository inspection, code review helpers, and GitHub pull-request routines.
