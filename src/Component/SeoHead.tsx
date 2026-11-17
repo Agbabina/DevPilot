@@ -11,9 +11,9 @@ const pageMeta: Record<string, PageMeta> = {
   "/cli": { title: "Install DevPilot CLI", description: "Install the DevPilot developer CLI for Windows, macOS and Linux, then explore practical commands.", keywords: "DevPilot CLI install, developer CLI, Git workflow, AI project inspection" },
   "/docs": { title: "DevPilot CLI Documentation", description: "Search the DevPilot CLI command guide to learn what every command does and when to use it.", keywords: "DevPilot docs, CLI commands, developer workflow, GitHub CLI" },
   "/": {
-    title: "DevPilot | AI Developer Workspace",
-    description: "DevPilot turns product ideas, developer milestones, coding tasks, and project progress into one AI-assisted workflow.",
-    keywords: "DevPilot, developer workspace, project tracking, AI coding assistant, software planning",
+    title: "DevPilot | Understand. Organize. Ship.",
+    description: "A terminal-first developer toolkit for understanding projects, organizing engineering work, inspecting code with AI, and shipping with confidence.",
+    keywords: "DevPilot, developer CLI, terminal toolkit, repository inspection, AI code explanation, Git workflows",
   },
   "/projects": {
     title: "Projects | DevPilot",
