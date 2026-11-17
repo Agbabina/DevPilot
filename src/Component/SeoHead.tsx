@@ -86,6 +86,10 @@ export default function SeoHead() {
     setMeta("og:description", base.description, "property");
     setMeta("og:type", "website", "property");
     setMeta("og:site_name", "DevPilot", "property");
+    setMeta("og:image", `${window.location.origin}/devpilot-mark.svg`, "property");
+    setMeta("twitter:card", "summary", "name");
+    setMeta("twitter:title", base.title, "name");
+    setMeta("twitter:description", base.description, "name");
     setMeta("og:url", `${window.location.origin}${path}`, "property");
 
     const jsonLd = {
